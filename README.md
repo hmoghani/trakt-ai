@@ -1,26 +1,21 @@
 # 🎬 Trakt AI Recommender
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![React](https://img.shields.io/badge/React-18.2-61dafb.svg?logo=react)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-5.1-646cff.svg?logo=vite)](https://vitejs.dev/)
-[![Trakt API](https://img.shields.io/badge/Trakt.tv-API%20v2-red.svg)](https://trakt.docs.apiary.io/)
-
-> An AI-powered, multi-vector movie and TV show recommendation engine connected to the **Trakt.tv API v2**.
+An AI-powered, multi-vector movie and TV show recommendation engine connected to the **Trakt.tv API v2**.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🤖 **Natural Language Prompt Assistant**: Enter conversational queries like `"Sci-Fi movies like Alien"`, `"90s mind-bending thrillers"`, or `"recent dark comedy TV shows"`.
-- 🧬 **Multi-Vector Semantic Intelligence Engine**: Combines reference title matching, Jaccard genre overlap, era alignment, and subgenre theme vectors (*Deep Space*, *Cosmic Horror*, *Cyberpunk*, *AI & Androids*).
-- 🖼️ **Multi-Source Poster Resolver**: High-resolution movie & TV show cover resolver combining **OMDb API**, **TVMaze API**, and **iTunes Store Open Media API** for 100% artwork coverage.
-- 📺 **Trakt Sync & Library Hub**: Syncs and displays your **Watched Movies & TV Shows** (consolidated into 1 show card per series with episode counts), **Trakt Watchlist**, **Custom Lists**, and **Rated Titles**.
-- 🔑 **Kodi-Style Device Code & OAuth Pairing**: Authenticate seamlessly via an 8-character pairing code at [trakt.tv/activate](https://trakt.tv/activate) or via Client ID & Secret credentials.
-- 🔒 **Privacy-First & Persistent**: User credentials and tokens stay 100% inside your browser's local storage—no external backend required.
+- **Natural Language Prompt Assistant**: Enter conversational queries like `"Sci-Fi movies like Alien"`, `"90s mind-bending thrillers"`, or `"recent dark comedy TV shows"`.
+- **Multi-Vector Semantic Intelligence Engine**: Combines reference title matching, Jaccard genre overlap, era alignment, and subgenre theme vectors (*Deep Space*, *Cosmic Horror*, *Cyberpunk*, *AI & Androids*).
+- **Multi-Source Poster Resolver**: High-resolution movie & TV show cover resolver combining **OMDb API**, **TVMaze API**, and **iTunes Store Open Media API** for 100% artwork coverage.
+- **Trakt Sync & Library Hub**: Syncs and displays your **Watched Movies & TV Shows** (consolidated into 1 show card per series with episode counts), **Trakt Watchlist**, **Custom Lists**, and **Rated Titles**.
+- **Kodi-Style Device Code & OAuth Pairing**: Authenticate seamlessly via an 8-character pairing code at [trakt.tv/activate](https://trakt.tv/activate) or via Client ID & Secret credentials.
+- **Privacy-First & Persistent**: User credentials and tokens stay 100% inside your browser's local storage—no external backend required.
 
 ---
 
-## 🚀 Quick Start & Installation
+## Quick Start & Installation
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18.0 or higher)
@@ -51,7 +46,7 @@ The compiled, optimized production bundle will be generated in the `dist/` direc
 
 ---
 
-## 🔑 Trakt.tv API Key Setup Guide
+## Trakt.tv API Key Setup Guide
 
 You can run **Trakt AI** in Demo Mode out of the box, or connect your personal **Trakt.tv API key** to fetch live history and personalized recommendations.
 
@@ -76,10 +71,10 @@ You can run **Trakt AI** in Demo Mode out of the box, or connect your personal *
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Core**: React 18, Vite 5, JavaScript (ES2022+)
-- **Styling**: Tailwind CSS (CDN/Custom System), Glassmorphism, CSS Animations
+- **Styling**: Tailwind CSS, Glassmorphism, CSS Animations
 - **Icons**: Lucide React
 - **APIs**:
   - [Trakt.tv API v2](https://trakt.docs.apiary.io/) (Sync, History, Watchlist, Lists, Recommendations)
@@ -89,6 +84,6 @@ You can run **Trakt AI** in Demo Mode out of the box, or connect your personal *
 
 ---
 
-## 📄 License
+## License
 
 MIT © [hmoghani](https://github.com/hmoghani)
