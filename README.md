@@ -1,8 +1,11 @@
 # 🎬 Trakt AI Recommender
 
-> An AI-powered, multi-vector movie and TV show recommendation engine connected to the **Trakt.tv API v2**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18.2-61dafb.svg?logo=react)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.1-646cff.svg?logo=vite)](https://vitejs.dev/)
+[![Trakt API](https://img.shields.io/badge/Trakt.tv-API%20v2-red.svg)](https://trakt.docs.apiary.io/)
 
-![Trakt AI Recommender](https://raw.githubusercontent.com/hmoghani/trakt-ai/main/dist/assets/preview-banner.png)
+> An AI-powered, multi-vector movie and TV show recommendation engine connected to the **Trakt.tv API v2**.
 
 ---
 
