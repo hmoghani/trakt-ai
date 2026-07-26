@@ -146,8 +146,10 @@ const REFERENCE_MEDIA = [
 function generateStructuredReasoning(item, userProfile, filters, referenceMatch, matchScore) {
   const points = [];
 
-  // Point 1: Reference Title or Thematic Overlap
-  if (referenceMatch) {
+  // Point 1: Reference Title or Actor Match
+  if (filters.personName) {
+    points.push(`🎭 Actor Match: Stars ${filters.personName}`);
+  } else if (referenceMatch) {
     const themeOverlap = (item.themes || []).filter(t => (referenceMatch.themes || []).includes(t));
     if (themeOverlap.length > 0) {
       points.push(`🧬 Theme Match: Shares '${themeOverlap[0]}' themes with ${referenceMatch.title}`);
@@ -196,6 +198,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     maxYear = 2026,
     excludeWatched = true,
     excludeAnimation = false,
+    personName = null,
     sortBy = 'matchScore',
     referenceTitleKey = null
   } = filters;
@@ -241,6 +244,16 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       }
     }
 
+    // Person / Actor Name Filter if present
+    if (personName) {
+      const normPerson = personName.toLowerCase();
+      const castMatch = (item.cast || []).some(c => c.toLowerCase().includes(normPerson));
+      const directorMatch = item.director && item.director.toLowerCase().includes(normPerson);
+      if (!castMatch && !directorMatch) {
+        return false;
+      }
+    }
+
     // Strict Genre Exclusion: Candidate MUST contain target genre (or secondary reference genre)
     if (targetGenre !== 'all') {
       const targetNorm = normalizeGenre(targetGenre);
@@ -270,7 +283,12 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   const scored = filtered.map(item => {
     let score = 0;
 
-    // A. Genre Overlap (up to 35 pts)
+    // A. Actor / Person Match (up to 40 pts)
+    if (personName) {
+      score += 40;
+    }
+
+    // B. Genre Overlap (up to 35 pts)
     const itemGenresNorm = (item.genres || []).map(g => normalizeGenre(g));
     if (targetGenre !== 'all' && itemGenresNorm.includes(normalizeGenre(targetGenre))) {
       score += 25;
@@ -282,7 +300,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       else if (rank >= 2) score += 4;
     });
 
-    // B. Theme Vector Similarity (up to 30 pts)
+    // C. Theme Vector Similarity (up to 30 pts)
     if (referenceMatch && referenceMatch.themes && item.themes) {
       const sharedThemes = item.themes.filter(t => referenceMatch.themes.includes(t));
       score += Math.min(30, sharedThemes.length * 15);
@@ -291,18 +309,10 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       score += Math.min(20, userMatchedThemes.length * 7);
     }
 
-    // C. Trakt Quality Rating (up to 20 pts)
+    // D. Trakt Quality Rating (up to 20 pts)
     if (item.traktRating) {
       score += Math.min(20, item.traktRating * 2);
     }
-
-    // D. Recency Alignment (up to 15 pts)
-    const currentYear = new Date().getFullYear();
-    const age = currentYear - item.year;
-    if (age <= 2) score += 15;
-    else if (age <= 5) score += 10;
-    else if (age <= 10) score += 7;
-    else score += 4;
 
     // Normalize Match Percentage (70% - 99%)
     const matchPercentage = Math.min(99, Math.max(65, Math.round((score / 90) * 100)));
@@ -313,7 +323,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       max: yearMode === 'range' ? maxYear : null
     };
 
-    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
+    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
 
     return {
       ...item,
@@ -334,7 +344,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Audience & Animation Exclusion Detection
+ * Natural language agent parser with Audience, Actor/Person & Animation Exclusion Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -346,6 +356,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     decade: '',
     excludeWatched: true,
     excludeAnimation: false,
+    personName: null,
     referenceTitleKey: null
   };
 
@@ -362,7 +373,39 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.excludeAnimation = true;
   }
 
-  // 3. Decade / Era intent
+  // 3. Actor / Person Intent Detection
+  const knownPeople = [
+    { keys: ['brad pit', 'brad pitt'], name: 'Brad Pitt' },
+    { keys: ['leonardo dicaprio', 'dicaprio'], name: 'Leonardo DiCaprio' },
+    { keys: ['tom cruise'], name: 'Tom Cruise' },
+    { keys: ['keanu reeves'], name: 'Keanu Reeves' },
+    { keys: ['tom hanks'], name: 'Tom Hanks' },
+    { keys: ['denzel washington'], name: 'Denzel Washington' },
+    { keys: ['christian bale'], name: 'Christian Bale' },
+    { keys: ['cillian murphy'], name: 'Cillian Murphy' },
+    { keys: ['quentin tarantino'], name: 'Quentin Tarantino' },
+    { keys: ['christopher nolan'], name: 'Christopher Nolan' },
+    { keys: ['ridley scott'], name: 'Ridley Scott' }
+  ];
+
+  for (const p of knownPeople) {
+    if (p.keys.some(k => text.includes(k))) {
+      result.personName = p.name;
+      break;
+    }
+  }
+
+  if (!result.personName) {
+    const actorMatch = text.match(/(?:movies|shows|films)?\s*(?:with|starring|featuring)\s+([a-zA-Z\s]+)/i);
+    if (actorMatch) {
+      const rawName = actorMatch[1].replace(/(?:in it|movies|shows|films|for adults|recent|top)/gi, '').trim();
+      if (rawName.length > 2) {
+        result.personName = rawName.replace(/\b\w/g, l => l.toUpperCase());
+      }
+    }
+  }
+
+  // 4. Decade / Era intent
   if (text.includes('90s') || text.includes('1990s') || text.includes('nineties')) {
     result.yearMode = 'decade';
     result.decade = '1990';
@@ -380,14 +423,14 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.decade = '2000';
   }
 
-  // 4. Exact year regex
+  // 5. Exact year regex
   const yearMatch = text.match(/\b(19\d\d|20\d\d)\b/);
   if (yearMatch && !result.decade) {
     result.yearMode = 'exact';
     result.exactYear = yearMatch[1];
   }
 
-  // 5. Reference Movie/Show Detection
+  // 6. Reference Movie/Show Detection
   for (const ref of REFERENCE_MEDIA) {
     if (ref.keywords.some(kw => text.includes(kw))) {
       result.referenceTitleKey = ref.keywords[0];
@@ -399,7 +442,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 6. Genre Keywords if no reference match
+  // 7. Genre Keywords if no reference match
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];

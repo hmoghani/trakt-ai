@@ -13,6 +13,8 @@ export async function callGeminiAPI(promptText, userProfile, candidates, apiKey)
     type: c.type,
     genres: c.genres,
     themes: c.themes || [],
+    cast: c.cast || [],
+    director: c.director || '',
     traktRating: c.traktRating || 8.0,
     overview: c.overview?.substring(0, 150)
   }));
@@ -25,6 +27,7 @@ Candidates Catalog:
 ${JSON.stringify(compactCandidates)}
 
 Task: Select the top 10 best matching candidates for the user query and profile.
+Actor/Director Match Rule: If the user explicitly asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY movies starring that actor or directed by that director.
 Exclusion Rule: If the user requests live-action / adult / no animation, exclude animated items. If specific genre/media type is requested, strictly filter by it.
 
 Return ONLY a valid JSON array of objects with these exact keys:
@@ -62,7 +65,6 @@ Return ONLY a valid JSON array of objects with these exact keys:
   try {
     return JSON.parse(rawText);
   } catch (e) {
-    // Clean codeblock markers if present
     const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleaned);
   }
@@ -81,6 +83,8 @@ export async function callGroqAPI(promptText, userProfile, candidates, apiKey) {
     type: c.type,
     genres: c.genres,
     themes: c.themes || [],
+    cast: c.cast || [],
+    director: c.director || '',
     traktRating: c.traktRating || 8.0
   }));
 
@@ -91,7 +95,7 @@ User Query: "${promptText}".
 Catalog:
 ${JSON.stringify(compactCandidates)}
 
-Select the top 10 best matching items. Return ONLY valid JSON array:
+Select the top 10 best matching items. If an actor/director is requested, select ONLY titles starring them. Return ONLY valid JSON array:
 [
   {
     "id": "candidate-id",
@@ -145,14 +149,13 @@ export async function generateLLMRecommendations(promptText, userProfile, candid
     console.log('[LLM Engine] Querying Groq Cloud (Llama 3.1 8B)...');
     llmResults = await callGroqAPI(promptText, userProfile, candidates, groqKey);
   } else {
-    return null; // Return null to fallback to local engine
+    return null;
   }
 
   if (!Array.isArray(llmResults) || llmResults.length === 0) {
     return null;
   }
 
-  // Merge LLM scores and reasoning back into full candidate objects
   const candidateMap = new Map();
   candidates.forEach(c => candidateMap.set(c.id, c));
 

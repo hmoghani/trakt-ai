@@ -9,7 +9,7 @@ import HistoryViewer from './components/HistoryViewer';
 
 import { DEMO_GENRES, DEMO_USER_WATCHED, DEMO_USER_LIKES, DEMO_CATALOG_CANDIDATES } from './data/demoData';
 import { analyzeUserProfile, generateRecommendations } from './services/recommendationEngine';
-import { fetchUserWatched, fetchUserWatchlist, fetchUserCustomLists, fetchCustomListItems, fetchUserLikes, fetchTrending, fetchGenres, fetchDeepCatalog } from './services/traktApi';
+import { fetchUserWatched, fetchUserWatchlist, fetchUserCustomLists, fetchCustomListItems, fetchUserLikes, fetchGenres, fetchDeepCatalog, searchPersonFilmography } from './services/traktApi';
 import { generateLLMRecommendations } from './services/llmService';
 
 export default function App() {
@@ -288,6 +288,29 @@ export default function App() {
       ...parsedFilters
     }));
 
+    let currentCandidates = [...catalogCandidates];
+
+    // If query requests a specific actor/person (e.g. Brad Pitt), query Trakt People API live
+    if (parsedFilters.personName && traktConfig.clientId) {
+      try {
+        setIsLoading(true);
+        const personFilmography = await searchPersonFilmography(parsedFilters.personName, { clientId: traktConfig.clientId });
+        if (personFilmography && personFilmography.length > 0) {
+          const map = new Map();
+          [...personFilmography, ...currentCandidates].forEach(c => {
+            const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
+            if (!map.has(key)) map.set(key, c);
+          });
+          currentCandidates = Array.from(map.values());
+          setCatalogCandidates(currentCandidates);
+        }
+      } catch (err) {
+        console.warn('Actor filmography search notice:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     // Check if LLM API Key is configured in localStorage or Vite env
     try {
       const savedLlm = localStorage.getItem('trakt_llm_config');
@@ -299,7 +322,7 @@ export default function App() {
 
       if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
         setIsLoading(true);
-        const aiRes = await generateLLMRecommendations(promptText, userProfile, catalogCandidates, llmConfig);
+        const aiRes = await generateLLMRecommendations(promptText, userProfile, currentCandidates, llmConfig);
         if (aiRes && aiRes.length > 0) {
           setLlmResults(aiRes);
         }

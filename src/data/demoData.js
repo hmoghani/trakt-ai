@@ -1,4 +1,4 @@
-// Trakt API Data Models & Expanded Semantic AI Catalog
+// Trakt API Data Models & Expanded Semantic AI Catalog with Actor Filmographies
 
 export const DEMO_GENRES = [
   { name: "Action", slug: "action" },
@@ -47,90 +47,114 @@ export const DEMO_USER_WATCHED = {
       plays: 4,
       poster: "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=600&q=80",
       overview: "When Earth becomes uninhabitable, a team of ex-NASA pilots travels through a wormhole in search of a new home."
-    },
-    {
-      id: "dune-part-two",
-      title: "Dune: Part Two",
-      year: 2024,
-      type: "movie",
-      genres: ["Science Fiction", "Adventure", "Action"],
-      themes: ["Space Opera", "Desert Planet", "Messiah Complex", "Political Warfare"],
-      userRating: 9.5,
-      traktRating: 8.8,
-      watchedAt: "2024-03-05",
-      plays: 2,
-      poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80",
-      overview: "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family."
-    },
-    {
-      id: "the-matrix",
-      title: "The Matrix",
-      year: 1999,
-      type: "movie",
-      genres: ["Science Fiction", "Action"],
-      themes: ["Simulated Reality", "Cyberpunk", "AI Rebellion", "Philosophical"],
-      userRating: 10,
-      traktRating: 8.7,
-      watchedAt: "2023-11-20",
-      plays: 5,
-      poster: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80",
-      overview: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers."
-    },
-    {
-      id: "parasite",
-      title: "Parasite",
-      year: 2019,
-      type: "movie",
-      genres: ["Drama", "Thriller", "Comedy"],
-      themes: ["Social Inequality", "Dark Satire", "Psychological Thriller", "Twisted Plot"],
-      userRating: 9,
-      traktRating: 8.6,
-      watchedAt: "2023-12-01",
-      plays: 2,
-      poster: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80",
-      overview: "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan."
     }
   ],
-  shows: [
-    {
-      id: "severance",
-      title: "Severance",
-      year: 2022,
-      type: "show",
-      genres: ["Science Fiction", "Drama", "Mystery", "Thriller"],
-      themes: ["Corporate Dystopia", "Memory Manipulation", "Psychological Mystery", "Mind-Bending"],
-      userRating: 9.5,
-      traktRating: 8.7,
-      watchedAt: "2024-02-01",
-      plays: 1,
-      seasonsWatched: 1,
-      poster: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=600&q=80",
-      overview: "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives."
-    },
-    {
-      id: "dark",
-      title: "Dark",
-      year: 2017,
-      type: "show",
-      genres: ["Science Fiction", "Mystery", "Crime", "Drama"],
-      themes: ["Time Travel Paradox", "Multiverse", "Grim Atmosphere", "Family Secrets"],
-      userRating: 10,
-      traktRating: 8.9,
-      watchedAt: "2023-09-15",
-      plays: 2,
-      seasonsWatched: 3,
-      poster: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80",
-      overview: "A family saga with a supernatural twist, set in a German town where two young children disappear, exposing the double lives of four families."
-    }
-  ]
+  shows: []
 };
 
 export const DEMO_USER_LIKES = [
-  { id: "arrival", title: "Arrival", type: "movie", year: 2016, genres: ["Science Fiction", "Drama", "Mystery"], themes: ["First Contact", "Linguistics", "Non-linear Time"] },
-  { id: "ex-machina", title: "Ex Machina", type: "movie", year: 2014, genres: ["Science Fiction", "Drama", "Thriller"], themes: ["AI Consciousness", "Turing Test", "Claustrophobic Thriller"] }
+  { id: "arrival", title: "Arrival", type: "movie", year: 2016, genres: ["Science Fiction", "Drama", "Mystery"], themes: ["First Contact", "Linguistics"] }
 ];
 
 export const DEMO_CATALOG_CANDIDATES = [
+  {
+    id: "fight-club",
+    title: "Fight Club",
+    year: 1999,
+    type: "movie",
+    genres: ["Drama", "Thriller"],
+    themes: ["Dual Identity", "Anarchy", "Anti-Consumerism", "Psychological Thriller"],
+    traktRating: 8.8,
+    votes: 185000,
+    runtime: 139,
+    overview: "An insomniac office worker and a devil-may-care soap maker form an underground fight club that evolves into much more.",
+    director: "David Fincher",
+    cast: ["Brad Pitt", "Edward Norton", "Helena Bonham Carter"]
+  },
+  {
+    id: "se7en",
+    title: "Se7en",
+    year: 1995,
+    type: "movie",
+    genres: ["Crime", "Drama", "Mystery", "Thriller"],
+    themes: ["Seven Deadly Sins", "Grim Detective", "Serial Killer", "Neo-Noir"],
+    traktRating: 8.7,
+    votes: 172000,
+    runtime: 127,
+    overview: "Two detectives, a rookie and a veteran, hunt a serial killer who uses the seven deadly sins as his motives.",
+    director: "David Fincher",
+    cast: ["Brad Pitt", "Morgan Freeman", "Gwyneth Paltrow"]
+  },
+  {
+    id: "inglourious-basterds",
+    title: "Inglourious Basterds",
+    year: 2009,
+    type: "movie",
+    genres: ["Adventure", "Drama", "War", "Action"],
+    themes: ["Alternative History", "WWII Revenge", "Cinema Culture", "Dark Comedy"],
+    traktRating: 8.6,
+    votes: 165000,
+    runtime: 153,
+    overview: "In Nazi-occupied France during WWII, a plan to assassinate Nazi leaders by a group of Jewish U.S. soldiers coincides with a theatre owner's vengeful plans.",
+    director: "Quentin Tarantino",
+    cast: ["Brad Pitt", "Christoph Waltz", "Mélanie Laurent", "Michael Fassbender"]
+  },
+  {
+    id: "12-monkeys",
+    title: "12 Monkeys",
+    year: 1995,
+    type: "movie",
+    genres: ["Science Fiction", "Mystery", "Thriller"],
+    themes: ["Time Travel", "Viral Apocalypse", "Mental Asylum", "Dystopian"],
+    traktRating: 8.0,
+    votes: 82000,
+    runtime: 129,
+    overview: "In a future world devastated by disease, a convict is sent back in time to gather information about the man-made virus that wiped out the human race.",
+    director: "Terry Gilliam",
+    cast: ["Bruce Willis", "Brad Pitt", "Madeleine Stowe"]
+  },
+  {
+    id: "moneyball",
+    title: "Moneyball",
+    year: 2011,
+    type: "movie",
+    genres: ["Biography", "Drama", "Sport"],
+    themes: ["Baseball Analytics", "Underdog Strategy", "Sports Management"],
+    traktRating: 8.1,
+    votes: 95000,
+    runtime: 133,
+    overview: "Oakland A's general manager Billy Beane's successful attempt to assemble a baseball team on a lean budget by employing computer-generated statistical analysis.",
+    director: "Bennett Miller",
+    cast: ["Brad Pitt", "Jonah Hill", "Philip Seymour Hoffman"]
+  },
+  {
+    id: "bullet-train",
+    title: "Bullet Train",
+    year: 2022,
+    type: "movie",
+    genres: ["Action", "Comedy", "Thriller"],
+    themes: ["High-Speed Train", "Interconnected Assassins", "Luck & Fate"],
+    traktRating: 7.7,
+    votes: 78000,
+    runtime: 126,
+    overview: "Five assassins aboard a swiftly-moving bullet train find out their missions have something in common.",
+    director: "David Leitch",
+    cast: ["Brad Pitt", "Joey King", "Aaron Taylor-Johnson"]
+  },
+  {
+    id: "once-upon-a-time-in-hollywood",
+    title: "Once Upon a Time in Hollywood",
+    year: 2019,
+    type: "movie",
+    genres: ["Comedy", "Drama"],
+    themes: ["1969 Hollywood", "Stuntman Loyalty", "Golden Age Cinema"],
+    traktRating: 8.0,
+    votes: 124000,
+    runtime: 161,
+    overview: "A faded television actor and his stunt double strive to achieve fame and success in the final years of Hollywood's Golden Age in 1969 Los Angeles.",
+    director: "Quentin Tarantino",
+    cast: ["Leonardo DiCaprio", "Brad Pitt", "Margot Robbie"]
+  },
   {
     id: "prometheus",
     title: "Prometheus",
@@ -144,20 +168,6 @@ export const DEMO_CATALOG_CANDIDATES = [
     overview: "Following clues to the origin of mankind, a team finds a structure on a distant moon, but they soon realize they are not alone.",
     director: "Ridley Scott",
     cast: ["Noomi Rapace", "Michael Fassbender", "Charlize Theron"]
-  },
-  {
-    id: "alien-covenant",
-    title: "Alien: Covenant",
-    year: 2017,
-    type: "movie",
-    genres: ["Science Fiction", "Horror", "Thriller"],
-    themes: ["Deep Space", "Cosmic Horror", "Neomorph", "AI Android", "Survival"],
-    traktRating: 7.4,
-    votes: 85000,
-    runtime: 122,
-    overview: "The crew of a colony ship, bound for a remote planet, discover an uncharted paradise with a dark secret in this Alien franchise installment.",
-    director: "Ridley Scott",
-    cast: ["Michael Fassbender", "Katherine Waterston", "Billy Crudup"]
   },
   {
     id: "alien-romulus",
@@ -188,20 +198,6 @@ export const DEMO_CATALOG_CANDIDATES = [
     cast: ["Sigourney Weaver", "Tom Skerritt", "John Hurt"]
   },
   {
-    id: "aliens-1986",
-    title: "Aliens",
-    year: 1986,
-    type: "movie",
-    genres: ["Science Fiction", "Action", "Horror"],
-    themes: ["Alien Queen", "Colonial Marines", "Deep Space", "Survival Action"],
-    traktRating: 8.7,
-    votes: 135000,
-    runtime: 137,
-    overview: "Decades after surviving the Nostromo incident, Ellen Ripley is sent back to LV-426 to investigate a loss of contact with a terraforming colony.",
-    director: "James Cameron",
-    cast: ["Sigourney Weaver", "Michael Biehn", "Carrie Henn"]
-  },
-  {
     id: "the-thing-1982",
     title: "The Thing",
     year: 1982,
@@ -214,159 +210,5 @@ export const DEMO_CATALOG_CANDIDATES = [
     overview: "A research team in Antarctica is hunted by a shape-shifting alien that assumes the appearance of its victims.",
     director: "John Carpenter",
     cast: ["Kurt Russell", "Wilford Brimley", "Keith David"]
-  },
-  {
-    id: "annihilation",
-    title: "Annihilation",
-    year: 2018,
-    type: "movie",
-    genres: ["Science Fiction", "Horror", "Mystery", "Drama"],
-    themes: ["Alien Mutation", "The Shimmer", "Cosmic Horror", "Psychological Expedition"],
-    traktRating: 7.7,
-    votes: 92000,
-    runtime: 115,
-    overview: "A biologist signs up for a dangerous, secret expedition into a mysterious zone where the laws of nature don't apply.",
-    director: "Alex Garland",
-    cast: ["Natalie Portman", "Jennifer Jason Leigh", "Tessa Thompson"]
-  },
-  {
-    id: "event-horizon",
-    title: "Event Horizon",
-    year: 1997,
-    type: "movie",
-    genres: ["Science Fiction", "Horror", "Mystery"],
-    themes: ["Deep Space", "Haunted Starship", "Cosmic Horror", "Hellish Dimension"],
-    traktRating: 7.3,
-    votes: 68000,
-    runtime: 96,
-    overview: "A rescue crew investigates a spaceship that disappeared into a black hole and has now returned... with something sinister aboard.",
-    director: "Paul W.S. Anderson",
-    cast: ["Laurence Fishburne", "Sam Neill", "Kathleen Quinlan"]
-  },
-  {
-    id: "the-creator",
-    title: "The Creator",
-    year: 2023,
-    type: "movie",
-    genres: ["Science Fiction", "Action", "Adventure"],
-    themes: ["AI War", "Robotics", "Futuristic Visuals", "Cyberpunk"],
-    traktRating: 7.4,
-    votes: 42100,
-    runtime: 133,
-    overview: "Against the backdrop of a future war between the human race and the forces of artificial intelligence, a former special-forces agent is recruited to hunt down and kill the Creator.",
-    director: "Gareth Edwards",
-    cast: ["John David Washington", "Gemma Chan", "Ken Watanabe"]
-  },
-  {
-    id: "children-of-men",
-    title: "Children of Men",
-    year: 2006,
-    type: "movie",
-    genres: ["Science Fiction", "Drama", "Thriller", "Action"],
-    themes: ["Dystopian Future", "Human Extinction", "Gritty Realism", "Continuous Shot Masterpiece"],
-    traktRating: 8.4,
-    votes: 89400,
-    runtime: 109,
-    overview: "In 2027, in a chaotic world in which women have become somehow infertile, a former activist agrees to help transport a miraculously pregnant woman to a sanctuary at sea.",
-    director: "Alfonso Cuarón",
-    cast: ["Clive Owen", "Julianne Moore", "Chiwetel Ejiofor"]
-  },
-  {
-    id: "scavengers-reign",
-    title: "Scavengers Reign",
-    year: 2023,
-    type: "show",
-    genres: ["Animation", "Science Fiction", "Adventure", "Drama"],
-    themes: ["Alien Planet Ecosystem", "Deep Space Survival", "Mind-Bending Ecology", "Biopunk"],
-    traktRating: 8.8,
-    votes: 18200,
-    runtime: 25,
-    overview: "When a deep space freighter is damaged, its surviving crew becomes stranded on a beautiful yet unforgiving alien planet Vesta.",
-    director: "Joe Bennett, Charles Huettner",
-    cast: ["Sunita Mani", "Wrenn Schmidt", "Bob Stephenson"]
-  },
-  {
-    id: "silo",
-    title: "Silo",
-    year: 2023,
-    type: "show",
-    genres: ["Science Fiction", "Drama", "Mystery"],
-    themes: ["Underground Silo", "Post-Apocalyptic", "Conspiracy", "Dystopia"],
-    traktRating: 8.3,
-    votes: 45600,
-    runtime: 50,
-    overview: "Men and women live in a giant underground silo with several regulations which they believe are in place to protect them from the toxic world on the surface.",
-    director: "Graham Yost",
-    cast: ["Rebecca Ferguson", "Common", "Tim Robbins"]
-  },
-  {
-    id: "3-body-problem",
-    title: "3 Body Problem",
-    year: 2024,
-    type: "show",
-    genres: ["Science Fiction", "Drama", "Mystery", "Adventure"],
-    themes: ["Alien Invasion Threat", "Hard Sci-Fi", "Theoretical Physics", "Cosmic Mystery"],
-    traktRating: 7.9,
-    votes: 52100,
-    runtime: 55,
-    overview: "A fateful decision in 1960s China echoes across space and time to a group of present-day scientists, forcing them to face humanity's greatest threat.",
-    director: "David Benioff, D.B. Weiss",
-    cast: ["Benedict Wong", "Jess Hong", "Eiza González"]
-  },
-  {
-    id: "gattaca",
-    title: "Gattaca",
-    year: 1997,
-    type: "movie",
-    genres: ["Science Fiction", "Drama", "Thriller"],
-    themes: ["Genetic Engineering", "Bioethics", "Futuristic Identity", "Neo-Noir"],
-    traktRating: 8.1,
-    votes: 76000,
-    runtime: 106,
-    overview: "A genetically inferior man assumes the identity of a superior one in order to pursue his lifelong dream of space travel.",
-    director: "Andrew Niccol",
-    cast: ["Ethan Hawke", "Uma Thurman", "Jude Law"]
-  },
-  {
-    id: "12-monkeys",
-    title: "12 Monkeys",
-    year: 1995,
-    type: "movie",
-    genres: ["Science Fiction", "Mystery", "Thriller"],
-    themes: ["Time Travel", "Viral Apocalypse", "Mental Asylum", "Dystopian"],
-    traktRating: 8.0,
-    votes: 82000,
-    runtime: 129,
-    overview: "In a future world devastated by disease, a convict is sent back in time to gather information about the man-made virus that wiped out the human race.",
-    director: "Terry Gilliam",
-    cast: ["Bruce Willis", "Brad Pitt", "Madeleine Stowe"]
-  },
-  {
-    id: "fallout-2024",
-    title: "Fallout",
-    year: 2024,
-    type: "show",
-    genres: ["Action", "Adventure", "Comedy", "Science Fiction"],
-    themes: ["Post-Apocalyptic Vault", "Retro-Futurism", "Mutants & Ghoul", "Dark Humor"],
-    traktRating: 8.5,
-    votes: 89000,
-    runtime: 55,
-    overview: "In a future, post-apocalyptic Los Angeles brought about by nuclear decimation, citizens must live in underground bunkers to protect themselves from radiation, mutants and bandits.",
-    director: "Jonathan Nolan",
-    cast: ["Ella Purnell", "Aaron Moten", "Walton Goggins"]
-  },
-  {
-    id: "the-bear",
-    title: "The Bear",
-    year: 2022,
-    type: "show",
-    genres: ["Comedy", "Drama"],
-    themes: ["Culinary Kitchen", "Chef Life", "Family Grief", "High Stress"],
-    traktRating: 8.7,
-    votes: 78900,
-    runtime: 30,
-    overview: "A young fine-dining chef comes home to Chicago to run his family sandwich shop after a heartbreaking death.",
-    director: "Christopher Storer",
-    cast: ["Jeremy Allen White", "Ebon Moss-Bachrach", "Ayo Edebiri"]
   }
 ];

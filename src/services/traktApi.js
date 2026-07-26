@@ -1,4 +1,4 @@
-// Trakt API Client Service with 1000-Title Catalog Loader, Watchlist & Custom Lists Support
+// Trakt API Client Service with 1000-Title Catalog Loader, People/Actor Search, Watchlist & Custom Lists Support
 
 const TRAKT_BASE_URL = 'https://api.trakt.tv';
 
@@ -46,8 +46,61 @@ async function traktFetch(endpoint, { clientId, bearerToken = null, params = {} 
 }
 
 /**
+ * Search Trakt People Graph (Actor / Director) and fetch their official filmography
+ */
+export async function searchPersonFilmography(personName = '', { clientId }) {
+  if (!personName || !personName.trim()) return [];
+
+  try {
+    // 1. Search person by name
+    const searchRes = await traktFetch(`/search/person`, {
+      clientId,
+      params: { query: personName.trim(), extended: 'full', limit: 5 }
+    });
+
+    if (!Array.isArray(searchRes) || searchRes.length === 0) {
+      return [];
+    }
+
+    const person = searchRes[0].person;
+    if (!person || !person.ids?.slug) return [];
+
+    const slug = person.ids.slug;
+
+    // 2. Fetch movies starring this person
+    const moviesRes = await traktFetch(`/people/${slug}/movies?extended=full`, { clientId });
+    
+    const results = [];
+    const castList = moviesRes?.cast || [];
+
+    castList.forEach(item => {
+      const m = item.movie;
+      if (m && m.title) {
+        results.push({
+          id: m.ids?.slug || m.ids?.trakt || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
+          title: m.title,
+          year: m.year || 2020,
+          type: 'movie',
+          genres: m.genres || ['Drama'],
+          traktRating: m.rating || 8.0,
+          votes: m.votes || 10000,
+          runtime: m.runtime || 120,
+          overview: m.overview || `Starring ${person.name}.`,
+          cast: [person.name],
+          ids: m.ids || {}
+        });
+      }
+    });
+
+    return results;
+  } catch (err) {
+    console.warn(`[Trakt API] Failed to fetch filmography for ${personName}:`, err.message);
+    return [];
+  }
+}
+
+/**
  * Fetch 1000 Titles for Deep Recommendations
- * Queries 5 pages of Trending Movies, Popular Movies, Trending Shows, & Popular Shows (100 items per page)
  */
 export async function fetchDeepCatalog({ clientId, pages = 5, limit = 100 }) {
   if (!clientId || !clientId.trim()) return [];
@@ -82,28 +135,24 @@ export async function fetchDeepCatalog({ clientId, pages = 5, limit = 100 }) {
     const promises = [];
 
     for (let page = 1; page <= pages; page++) {
-      // 1. Trending Movies (100 per page)
       promises.push(
         traktFetch(`/movies/trending?page=${page}&limit=${limit}&extended=full`, { clientId })
           .then(items => { if (Array.isArray(items)) items.forEach(i => addCandidate(i, 'movie')); })
           .catch(() => {})
       );
 
-      // 2. Popular Movies (100 per page)
       promises.push(
         traktFetch(`/movies/popular?page=${page}&limit=${limit}&extended=full`, { clientId })
           .then(items => { if (Array.isArray(items)) items.forEach(i => addCandidate(i, 'movie')); })
           .catch(() => {})
       );
 
-      // 3. Trending Shows (100 per page)
       promises.push(
         traktFetch(`/shows/trending?page=${page}&limit=${limit}&extended=full`, { clientId })
           .then(items => { if (Array.isArray(items)) items.forEach(i => addCandidate(i, 'show')); })
           .catch(() => {})
       );
 
-      // 4. Popular Shows (100 per page)
       promises.push(
         traktFetch(`/shows/popular?page=${page}&limit=${limit}&extended=full`, { clientId })
           .then(items => { if (Array.isArray(items)) items.forEach(i => addCandidate(i, 'show')); })
