@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
-import { Bot, Send, Sparkles, Command } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bot, Send, Sparkles, Cpu, CheckCircle } from 'lucide-react';
 import { parseAgentPrompt } from '../services/recommendationEngine';
 
 export default function AgentChat({ onAgentQuery, genresList = [] }) {
   const [promptInput, setPromptInput] = useState('');
   const [lastAgentFeedback, setLastAgentFeedback] = useState(null);
+  const [activeEngineInfo, setActiveEngineInfo] = useState({ type: 'rule', name: 'Rule Engine' });
+
+  // Read active LLM configuration
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('trakt_llm_config');
+      const cfg = saved ? JSON.parse(saved) : {};
+      if (cfg.provider === 'gemini' && cfg.geminiKey) {
+        setActiveEngineInfo({ type: 'gemini', name: 'Google Gemini 1.5 Flash (Generative AI)' });
+      } else if (cfg.provider === 'groq' && cfg.groqKey) {
+        setActiveEngineInfo({ type: 'groq', name: 'Groq Llama 3.1 8B (Generative AI)' });
+      } else {
+        setActiveEngineInfo({ type: 'rule', name: 'Local Multi-Vector Engine' });
+      }
+    } catch (e) {
+      setActiveEngineInfo({ type: 'rule', name: 'Local Multi-Vector Engine' });
+    }
+  }, []);
 
   const samplePrompts = [
-    "Find me high-rated 90s Sci-Fi movies",
+    "scifi movies like Alien or Prometheus for adults",
     "Recommend mind-bending thriller TV shows from 2020s",
     "Show me dark mystery movies I haven't watched yet",
     "Give me top action comedies"
@@ -20,43 +38,76 @@ export default function AgentChat({ onAgentQuery, genresList = [] }) {
     const parsedFilters = parseAgentPrompt(promptInput, genresList);
     onAgentQuery(parsedFilters, promptInput);
 
-    // Provide friendly agent feedback message
-    const feedbackParts = [];
-    if (parsedFilters.genre !== 'all') feedbackParts.push(`Genre: ${parsedFilters.genre}`);
-    if (parsedFilters.yearMode === 'decade') feedbackParts.push(`Era: ${parsedFilters.decade}s`);
-    if (parsedFilters.yearMode === 'exact') feedbackParts.push(`Year: ${parsedFilters.exactYear}`);
-    if (parsedFilters.mediaType !== 'all') feedbackParts.push(`Type: ${parsedFilters.mediaType}s`);
+    if (activeEngineInfo.type === 'gemini') {
+      setLastAgentFeedback(`🤖 Google Gemini 1.5 Flash generated recommendations for "${promptInput}"`);
+    } else if (activeEngineInfo.type === 'groq') {
+      setLastAgentFeedback(`🤖 Groq (Llama 3.1 8B) generated recommendations for "${promptInput}"`);
+    } else {
+      const feedbackParts = [];
+      if (parsedFilters.genre !== 'all') feedbackParts.push(`Genre: ${parsedFilters.genre}`);
+      if (parsedFilters.yearMode === 'decade') feedbackParts.push(`Era: ${parsedFilters.decade}s`);
+      if (parsedFilters.yearMode === 'exact') feedbackParts.push(`Year: ${parsedFilters.exactYear}`);
+      if (parsedFilters.mediaType !== 'all') feedbackParts.push(`Type: ${parsedFilters.mediaType}s`);
 
-    const summary = feedbackParts.length > 0
-      ? `Applied AI filters -> ${feedbackParts.join(' • ')}`
-      : `Searching recommendations based on your request: "${promptInput}"`;
+      const summary = feedbackParts.length > 0
+        ? `Applied AI filters -> ${feedbackParts.join(' • ')}`
+        : `Searching recommendations based on your request: "${promptInput}"`;
 
-    setLastAgentFeedback(summary);
+      setLastAgentFeedback(summary);
+    }
   };
 
   const handleSelectSample = (sample) => {
     setPromptInput(sample);
     const parsedFilters = parseAgentPrompt(sample, genresList);
     onAgentQuery(parsedFilters, sample);
-    setLastAgentFeedback(`Applied AI filters for "${sample}"`);
+    
+    if (activeEngineInfo.type === 'gemini') {
+      setLastAgentFeedback(`🤖 Google Gemini 1.5 Flash generated recommendations for "${sample}"`);
+    } else {
+      setLastAgentFeedback(`Applied AI filters for "${sample}"`);
+    }
   };
 
   return (
     <div className="glass-panel rounded-2xl p-5 mb-8 border border-purple-900/40 bg-gradient-to-r from-slate-950 via-slate-900 to-purple-950/40 shadow-2xl">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
-          <Bot className="w-5 h-5 animate-pulse" />
+      
+      {/* Top Bar: Title & Active Engine Indicator */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+            <Bot className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              Ask Recommendation Agent
+            </h2>
+            <p className="text-xs text-slate-400">
+              Tell the AI agent what you want to watch (e.g. genre, era, mood, or title similarity)
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-            Ask Recommendation Agent
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              Natural Language Prompt
+
+        {/* Active Engine Badge */}
+        <div className="self-start sm:self-auto">
+          {activeEngineInfo.type === 'gemini' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 shadow-md">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+              <span>🤖 Active LLM: Google Gemini 1.5 Flash</span>
             </span>
-          </h2>
-          <p className="text-xs text-slate-400">
-            Tell the AI agent what you want to watch (e.g., genre, era, mood, or specific year)
-          </p>
+          )}
+          {activeEngineInfo.type === 'groq' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-purple-500/10 text-purple-300 border border-purple-500/30 shadow-md">
+              <Cpu className="w-3.5 h-3.5 text-purple-400" />
+              <span>🤖 Active LLM: Groq Llama 3.1 8B</span>
+            </span>
+          )}
+          {activeEngineInfo.type === 'rule' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Engine: Multi-Vector Rules</span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -65,7 +116,7 @@ export default function AgentChat({ onAgentQuery, genresList = [] }) {
           type="text"
           value={promptInput}
           onChange={(e) => setPromptInput(e.target.value)}
-          placeholder="e.g. 'Show me 90s sci-fi movies' or 'Recommend dark thriller shows from the last 5 years'..."
+          placeholder="e.g. 'scifi movies like Alien or Prometheus for adults'..."
           className="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl pl-4 pr-12 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all shadow-inner"
         />
         <button
