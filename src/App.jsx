@@ -10,6 +10,7 @@ import HistoryViewer from './components/HistoryViewer';
 import { DEMO_GENRES, DEMO_USER_WATCHED, DEMO_USER_LIKES, DEMO_CATALOG_CANDIDATES } from './data/demoData';
 import { analyzeUserProfile, generateRecommendations } from './services/recommendationEngine';
 import { fetchUserWatched, fetchUserWatchlist, fetchUserCustomLists, fetchCustomListItems, fetchUserLikes, fetchTrending, fetchGenres, fetchDeepCatalog } from './services/traktApi';
+import { generateLLMRecommendations } from './services/llmService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('recommendations');
@@ -17,6 +18,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [llmResults, setLlmResults] = useState(null);
 
   // Trakt Credentials Config from localStorage
   const [traktConfig, setTraktConfig] = useState(() => {
@@ -89,7 +91,6 @@ export default function App() {
     setErrorMsg(null);
 
     try {
-      // 1. Fetch Genres if Client ID is available
       if (config.clientId) {
         const apiGenres = await fetchGenres('movies', { clientId: config.clientId });
         if (Array.isArray(apiGenres) && apiGenres.length > 0) {
@@ -97,7 +98,6 @@ export default function App() {
         }
       }
 
-      // 2. Fetch User Watched History (Movies AND TV Shows)
       if (config.username || config.bearerToken) {
         const moviesRes = await fetchUserWatched('movies', config);
         const showsRes = await fetchUserWatched('shows', config);
@@ -154,7 +154,6 @@ export default function App() {
           setWatchedShows(Array.from(showsMap.values()));
         }
 
-        // 3. Fetch User Watchlist (Movies AND Shows)
         const wlMovies = await fetchUserWatchlist('movies', config);
         const wlShows = await fetchUserWatchlist('shows', config);
         const parsedWatchlist = [];
@@ -194,7 +193,6 @@ export default function App() {
         }
         setWatchlistItems(parsedWatchlist);
 
-        // 4. Fetch Custom Lists & Items
         const userLists = await fetchUserCustomLists(config);
         if (Array.isArray(userLists) && userLists.length > 0) {
           const loadedLists = await Promise.all(userLists.map(async list => {
@@ -219,7 +217,6 @@ export default function App() {
           setCustomLists(loadedLists);
         }
 
-        // 5. Fetch User Ratings / Likes
         const userLikes = await fetchUserLikes(config);
         if (Array.isArray(userLikes) && userLikes.length > 0) {
           const parsedLikes = userLikes.map(item => {
@@ -239,7 +236,6 @@ export default function App() {
         }
       }
 
-      // 6. Fetch Deep 1000-Title Catalog from Trakt (500 Trending + 500 Popular)
       if (config.clientId) {
         const deepCatalog = await fetchDeepCatalog({ clientId: config.clientId, pages: 5, limit: 100 });
         if (deepCatalog && deepCatalog.length > 0) {
@@ -276,20 +272,47 @@ export default function App() {
     return set;
   }, [watchedMovies, watchedShows]);
 
-  // Compute Recommendations
+  // Compute Recommendations (LLM override if present, else fallback to rule engine)
   const recommendations = useMemo(() => {
+    if (llmResults && Array.isArray(llmResults) && llmResults.length > 0) {
+      return llmResults;
+    }
     return generateRecommendations(catalogCandidates, userProfile, filters, watchedIdsSet);
-  }, [catalogCandidates, userProfile, filters, watchedIdsSet]);
+  }, [llmResults, catalogCandidates, userProfile, filters, watchedIdsSet]);
 
   // Agent Natural Prompt Query Handler
-  const handleAgentQuery = (parsedFilters, promptText) => {
+  const handleAgentQuery = async (parsedFilters, promptText) => {
+    setLlmResults(null);
     setFilters(prev => ({
       ...prev,
       ...parsedFilters
     }));
+
+    // Check if LLM API Key is configured in localStorage or Vite env
+    try {
+      const savedLlm = localStorage.getItem('trakt_llm_config');
+      const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
+        provider: 'gemini',
+        geminiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+        groqKey: import.meta.env.VITE_GROQ_API_KEY || ''
+      };
+
+      if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
+        setIsLoading(true);
+        const aiRes = await generateLLMRecommendations(promptText, userProfile, catalogCandidates, llmConfig);
+        if (aiRes && aiRes.length > 0) {
+          setLlmResults(aiRes);
+        }
+      }
+    } catch (err) {
+      console.warn('[LLM Query Error] Falling back to local engine:', err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResetFilters = () => {
+    setLlmResults(null);
     setFilters({
       mediaType: 'all',
       genre: 'all',
@@ -346,7 +369,10 @@ export default function App() {
             {/* Filter Controls Panel */}
             <FilterBar
               filters={filters}
-              setFilters={setFilters}
+              setFilters={(newFilters) => {
+                setLlmResults(null);
+                setFilters(newFilters);
+              }}
               genresList={genresList}
               totalResults={recommendations.length}
               onResetFilters={handleResetFilters}
@@ -409,7 +435,7 @@ export default function App() {
       {/* Footer */}
       <footer className="w-full border-t border-slate-900 bg-slate-950 py-6 mt-12 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© 2026 Trakt AI Recommender • Powered by Trakt.tv API v2, TVMaze & TMDB Artwork</p>
+          <p>© 2026 Trakt AI Recommender • Powered by Trakt.tv API v2, Google Gemini & Groq LLMs</p>
           <div className="flex items-center gap-4 text-slate-400">
             <a href="https://trakt.tv" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400">Trakt.tv</a>
             <span>•</span>

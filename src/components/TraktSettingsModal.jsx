@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, User, ShieldCheck, Check, AlertTriangle, ExternalLink, RefreshCw, Tv, Copy, CheckCircle, Clock, Sparkles, Lock } from 'lucide-react';
+import { X, Key, User, ExternalLink, RefreshCw, Tv, Copy, CheckCircle, Clock, Sparkles, Lock, Bot, Cpu } from 'lucide-react';
 import { generateDeviceCode, pollDeviceToken, generateDemoDeviceCode, exchangeOAuthToken } from '../services/traktApi';
 
 export default function TraktSettingsModal({ 
@@ -10,7 +10,7 @@ export default function TraktSettingsModal({
   isLiveMode, 
   setIsLiveMode 
 }) {
-  const [authMode, setAuthMode] = useState('manual'); // 'manual' or 'device'
+  const [authMode, setAuthMode] = useState('manual'); // 'manual', 'device', or 'llm'
   const [clientId, setClientId] = useState(traktConfig?.clientId || '');
   const [clientSecret, setClientSecret] = useState(traktConfig?.clientSecret || '');
   const [username, setUsername] = useState(traktConfig?.username || '');
@@ -18,10 +18,20 @@ export default function TraktSettingsModal({
   const [pinCode, setPinCode] = useState('');
   const [isExchangingPin, setIsExchangingPin] = useState(false);
   
+  // LLM Config State
+  const [llmConfig, setLlmConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('trakt_llm_config');
+      return saved ? JSON.parse(saved) : { provider: 'gemini', geminiKey: '', groqKey: '' };
+    } catch (e) {
+      return { provider: 'gemini', geminiKey: '', groqKey: '' };
+    }
+  });
+
   // Device Auth Flow State
-  const [deviceData, setDeviceData] = useState(null); // { device_code, user_code, verification_url, expires_in, interval, isDemo }
+  const [deviceData, setDeviceData] = useState(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
-  const [pollStatus, setPollStatus] = useState(null); // 'waiting', 'success', 'expired', 'error'
+  const [pollStatus, setPollStatus] = useState(null);
   const [deviceError, setDeviceError] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -37,6 +47,16 @@ export default function TraktSettingsModal({
       if (traktConfig.bearerToken) setBearerToken(traktConfig.bearerToken);
     }
   }, [traktConfig]);
+
+  // Save LLM Config to LocalStorage
+  const handleSaveLlmConfig = () => {
+    try {
+      localStorage.setItem('trakt_llm_config', JSON.stringify(llmConfig));
+      setTestResult({ success: true, message: 'LLM AI configuration saved successfully!' });
+    } catch (e) {
+      setTestResult({ success: false, message: 'Failed to save LLM settings.' });
+    }
+  };
 
   // Countdown timer effect
   useEffect(() => {
@@ -94,7 +114,6 @@ export default function TraktSettingsModal({
     return () => clearInterval(pollTimer);
   }, [isOpen, deviceData, pollStatus, clientId, clientSecret, username, onSaveConfig, setIsLiveMode]);
 
-  // Early return ONLY AFTER all hooks have been registered!
   if (!isOpen) return null;
 
   // Real Device Code Generation
@@ -173,7 +192,6 @@ export default function TraktSettingsModal({
     }
   };
 
-  // Copy code helper
   const handleCopyUserCode = () => {
     if (deviceData?.user_code) {
       navigator.clipboard.writeText(deviceData.user_code);
@@ -184,6 +202,7 @@ export default function TraktSettingsModal({
 
   const handleManualSave = (e) => {
     e.preventDefault();
+    handleSaveLlmConfig();
     if (onSaveConfig) {
       onSaveConfig({
         clientId: clientId.trim(),
@@ -246,7 +265,7 @@ export default function TraktSettingsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
       <div 
-        className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-slate-700/80 shadow-2xl bg-slate-950 relative overflow-hidden"
+        className="glass-panel w-full max-w-lg rounded-3xl p-6 border border-slate-700/80 shadow-2xl bg-slate-950 relative overflow-hidden max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -262,46 +281,52 @@ export default function TraktSettingsModal({
             <Key className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-slate-100">Trakt API Authentication</h3>
+            <h3 className="text-xl font-bold text-slate-100">Settings & AI Engines</h3>
             <p className="text-xs text-slate-400">
-              Connect your existing Trakt Client ID, Client Secret, or Username
+              Configure Trakt API Credentials & Free LLM Engine (Google Gemini / Groq)
             </p>
           </div>
         </div>
 
-        {/* Auth Method Tabs */}
+        {/* Auth & LLM Navigation Tabs */}
         <div className="flex p-1 bg-slate-900 rounded-xl border border-slate-800 mb-6 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setAuthMode('manual')}
-            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-              authMode === 'manual'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              authMode === 'manual' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Key className="w-3.5 h-3.5" />
-            <span>Client ID & Secret / Username</span>
+            <span>Trakt API Keys</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setAuthMode('llm')}
+            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              authMode === 'llm' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Bot className="w-3.5 h-3.5" />
+            <span>Free LLM AI Engine</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setAuthMode('device')}
-            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-              authMode === 'device'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              authMode === 'device' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Tv className="w-3.5 h-3.5" />
-            <span>Kodi-Style Device Code</span>
+            <span>Device Code</span>
           </button>
         </div>
 
-        {/* TAB 1: MANUAL CREDENTIALS (CLIENT ID & SECRET / USERNAME / TOKEN) */}
+        {/* TAB 1: MANUAL TRAKT CREDENTIALS */}
         {authMode === 'manual' && (
           <form onSubmit={handleManualSave} className="space-y-4">
-            
-            {/* Trakt Client ID */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
                 <span>Trakt Client ID</span>
@@ -323,7 +348,6 @@ export default function TraktSettingsModal({
               />
             </div>
 
-            {/* Trakt Client Secret */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Trakt Client Secret
@@ -337,7 +361,6 @@ export default function TraktSettingsModal({
               />
             </div>
 
-            {/* Trakt Username */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Trakt Username (For Watched History & Likes)
@@ -354,7 +377,6 @@ export default function TraktSettingsModal({
               </div>
             </div>
 
-            {/* Trakt PIN Authorization Option */}
             <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-800/40 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-purple-300 flex items-center gap-1.5">
@@ -392,21 +414,6 @@ export default function TraktSettingsModal({
               </div>
             </div>
 
-            {testResult && (
-              <div className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${
-                testResult.success 
-                  ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800/40' 
-                  : 'bg-rose-950/40 text-rose-300 border-rose-800/40'
-              }`}>
-                {testResult.success ? (
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                )}
-                <span>{testResult.message}</span>
-              </div>
-            )}
-
             <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
               <button
                 type="button"
@@ -415,24 +422,138 @@ export default function TraktSettingsModal({
                 className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center gap-1.5"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isTesting ? 'animate-spin' : ''}`} />
-                <span>Test API</span>
+                <span>Test Trakt API</span>
               </button>
 
               <button
                 type="submit"
                 className="px-6 py-2.5 rounded-xl gradient-accent text-white text-xs font-bold shadow-lg shadow-rose-950/40 hover:opacity-95 transition-all"
               >
-                Save Credentials
+                Save Trakt Credentials
               </button>
             </div>
           </form>
         )}
 
-        {/* TAB 2: KODI-STYLE DEVICE CODE AUTH */}
+        {/* TAB 2: FREE LLM ENGINE CONFIG (GEMINI 1.5 FLASH / GROQ) */}
+        {authMode === 'llm' && (
+          <div className="space-y-4 animate-fadeIn">
+            
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border border-purple-500/30 space-y-2">
+              <div className="flex items-center gap-2 text-purple-300 font-bold text-sm">
+                <Bot className="w-5 h-5 text-purple-400" />
+                <span>Free Generative AI Recommendation Engines</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Connect a <strong>100% Free API Key</strong> to activate deep generative LLM recommendations, film critic reasoning, and conversational prompt parsing!
+              </p>
+            </div>
+
+            {/* Provider Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-purple-400" />
+                <span>Active LLM Engine Provider:</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLlmConfig(prev => ({ ...prev, provider: 'gemini' }))}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    llmConfig.provider === 'gemini'
+                      ? 'bg-purple-600/20 border-purple-500 text-white font-bold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span className="text-xs block font-extrabold text-purple-300">Google Gemini 1.5 Flash</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">100% Free • 15 Req/Min</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLlmConfig(prev => ({ ...prev, provider: 'groq' }))}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    llmConfig.provider === 'groq'
+                      ? 'bg-purple-600/20 border-purple-500 text-white font-bold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span className="text-xs block font-extrabold text-rose-300">Groq (Llama 3.1 8B)</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">100% Free • Ultra-Fast</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Google Gemini API Key */}
+            {llmConfig.provider === 'gemini' && (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Google Gemini API Key (100% Free)</span>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-purple-400 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    Get Free Key from Google AI Studio <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </label>
+                <input
+                  type="password"
+                  value={llmConfig.geminiKey || ''}
+                  onChange={(e) => setLlmConfig(prev => ({ ...prev, geminiKey: e.target.value }))}
+                  placeholder="Paste AI Studio API Key (AIzaSy...)"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono"
+                />
+              </div>
+            )}
+
+            {/* Groq API Key */}
+            {llmConfig.provider === 'groq' && (
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <span>Groq API Key (100% Free)</span>
+                  <a
+                    href="https://console.groq.com/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-rose-400 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    Get Free Key from Groq Console <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </label>
+                <input
+                  type="password"
+                  value={llmConfig.groqKey || ''}
+                  onChange={(e) => setLlmConfig(prev => ({ ...prev, groqKey: e.target.value }))}
+                  placeholder="Paste Groq API Key (gsk_...)"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-rose-500 font-mono"
+                />
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400 italic">
+                No key? App automatically uses local rule engine fallback.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSaveLlmConfig();
+                  if (onClose) onClose();
+                }}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-950/40 transition-all"
+              >
+                Save LLM Settings
+              </button>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: KODI-STYLE DEVICE CODE AUTH */}
         {authMode === 'device' && (
           <div className="space-y-4">
-            
-            {/* Client ID Field */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-400 mb-1">
                 Trakt Client ID:
@@ -449,13 +570,8 @@ export default function TraktSettingsModal({
               />
             </div>
 
-            {/* Error Banner */}
             {deviceError && (
               <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-rose-300">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span>Authentication Notice</span>
-                </div>
                 <p className="leading-tight text-[11px]">{deviceError}</p>
               </div>
             )}
@@ -493,8 +609,6 @@ export default function TraktSettingsModal({
               </div>
             ) : (
               <div className="space-y-4 animate-fadeIn">
-                
-                {/* User Code Big Display Box */}
                 <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-purple-950/40 to-slate-900 border border-purple-500/40 text-center space-y-3 shadow-xl">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-300 flex items-center justify-center gap-1.5">
                     {deviceData.isDemo && <Sparkles className="w-3.5 h-3.5 text-amber-300" />}
@@ -515,11 +629,6 @@ export default function TraktSettingsModal({
                     </button>
                   </div>
 
-                  {copiedCode && (
-                    <p className="text-[11px] text-emerald-400 font-medium">Code copied to clipboard!</p>
-                  )}
-
-                  {/* Link to Trakt Activate */}
                   <div className="pt-1">
                     <a
                       href={deviceData.verification_url || 'https://trakt.tv/activate'}
@@ -533,7 +642,6 @@ export default function TraktSettingsModal({
                   </div>
                 </div>
 
-                {/* Status Indicator & Countdown */}
                 <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     {pollStatus === 'waiting' && (
@@ -550,14 +658,7 @@ export default function TraktSettingsModal({
                         <span className="text-emerald-300 font-bold">Successfully Connected!</span>
                       </>
                     )}
-                    {pollStatus === 'expired' && (
-                      <>
-                        <AlertTriangle className="w-4 h-4 text-rose-400" />
-                        <span className="text-rose-300 font-medium">Code Expired. Please regenerate.</span>
-                      </>
-                    )}
                   </div>
-
                   {pollStatus === 'waiting' && (
                     <div className="flex items-center gap-1 text-slate-400 font-mono">
                       <Clock className="w-3.5 h-3.5 text-purple-400" />
@@ -565,29 +666,8 @@ export default function TraktSettingsModal({
                     </div>
                   )}
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={handleStartDeviceAuth}
-                    className="text-xs text-rose-400 hover:underline flex items-center gap-1"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Regenerate Code
-                  </button>
-                  {pollStatus === 'success' && (
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs"
-                    >
-                      Done & Close
-                    </button>
-                  )}
-                </div>
-
               </div>
             )}
-
           </div>
         )}
 
