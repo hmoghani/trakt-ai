@@ -1,4 +1,4 @@
-// Trakt API Data Models & Expanded Semantic AI Catalog with Farsi & World Cinema
+// Trakt API Data Models & Expanded Master Semantic AI Catalog
 
 export const DEMO_GENRES = [
   { name: "Action", slug: "action" },
@@ -8,6 +8,7 @@ export const DEMO_GENRES = [
   { name: "Crime", slug: "crime" },
   { name: "Documentary", slug: "documentary" },
   { name: "Drama", slug: "drama" },
+  { name: "Family", slug: "family" },
   { name: "Fantasy", slug: "fantasy" },
   { name: "Horror", slug: "horror" },
   { name: "Mystery", slug: "mystery" },
@@ -26,7 +27,7 @@ export const DEMO_USER_WATCHED = {
 export const DEMO_USER_LIKES = [];
 
 export const DEMO_CATALOG_CANDIDATES = [
-  // Acclaimed Farsi / Iranian Cinema Masterpieces
+  // --- FARSI / PERSIAN CINEMA ---
   {
     id: "a-separation",
     title: "A Separation",
@@ -38,7 +39,7 @@ export const DEMO_CATALOG_CANDIDATES = [
     traktRating: 8.7,
     votes: 112000,
     runtime: 123,
-    overview: "A married couple faced with a difficult decision - to improve the life of their child by moving to another country or stay in Iran to look after a parent with Alzheimer's disease.",
+    overview: "A married couple faced with a difficult decision - to improve the life of their child by moving to another country or stay in Iran.",
     director: "Asghar Farhadi",
     cast: ["Payman Maadi", "Leila Hatami", "Sareh Bayat", "Shahab Hosseini"]
   },
@@ -53,7 +54,7 @@ export const DEMO_CATALOG_CANDIDATES = [
     traktRating: 8.2,
     votes: 68000,
     runtime: 124,
-    overview: "While participating in a production of Death of a Salesman, a young Iranian couple's relationship begins to turn sour after the wife is assaulted in their new apartment.",
+    overview: "While participating in a production of Death of a Salesman, a young Iranian couple's relationship turns sour.",
     director: "Asghar Farhadi",
     cast: ["Taraneh Alidoosti", "Shahab Hosseini", "Babak Karimi"]
   },
@@ -64,11 +65,11 @@ export const DEMO_CATALOG_CANDIDATES = [
     type: "movie",
     genres: ["Drama", "Family", "Sport"],
     language: "fa",
-    themes: ["Lost Shoes", "Brother Sister Bond", "Poverty & Dignity", "Footrace"],
+    themes: ["Lost Shoes", "Brother Sister Bond", "Poverty & Dignity"],
     traktRating: 8.5,
     votes: 54000,
     runtime: 89,
-    overview: "After a boy loses his sister's pair of shoes, he goes on a series of adventures in order to find them without his parents knowing.",
+    overview: "After a boy loses his sister's pair of shoes, he goes on a series of adventures to find them.",
     director: "Majid Majidi",
     cast: ["Amir Farrokh Hashemian", "Bahare Seddiqi", "Reza Naji"]
   },
@@ -79,13 +80,13 @@ export const DEMO_CATALOG_CANDIDATES = [
     type: "movie",
     genres: ["Drama"],
     language: "fa",
-    themes: ["Existence & Life", "Palme d'Or Winner", "Tehran Hills", "Philosophical Journey"],
+    themes: ["Existence & Life", "Palme d'Or Winner", "Tehran Hills"],
     traktRating: 8.1,
     votes: 38000,
     runtime: 95,
-    overview: "A middle-aged man drives through a city suburb looking for someone who can carry out the task of burying him after he commits suicide.",
+    overview: "A middle-aged man drives through a city suburb looking for someone who can carry out the task of burying him.",
     director: "Abbas Kiarostami",
-    cast: ["Homayoun Ershadi", "Abdolhossein Bagheri", "Afshin Khorshid Bakhtiari"]
+    cast: ["Homayoun Ershadi", "Abdolhossein Bagheri"]
   },
   {
     id: "about-elly",
@@ -98,19 +99,222 @@ export const DEMO_CATALOG_CANDIDATES = [
     traktRating: 8.3,
     votes: 42000,
     runtime: 119,
-    overview: "The mysterious disappearance of a kindergarten teacher during a weekend vacation in northern Iran drives a series of deceptions among a group of close friends.",
+    overview: "The mysterious disappearance of a kindergarten teacher during a weekend vacation in northern Iran.",
     director: "Asghar Farhadi",
     cast: ["Golshifteh Farahani", "Shahab Hosseini", "Taraneh Alidoosti"]
   },
 
-  // Western & Hollywood Titles
+  // --- FRENCH CINEMA ---
+  {
+    id: "amelie",
+    title: "Amélie",
+    year: 2001,
+    type: "movie",
+    language: "fr",
+    genres: ["Comedy", "Romance", "Drama"],
+    themes: ["Parisian Whimsy", "Montmartre", "Kindness"],
+    traktRating: 8.4,
+    votes: 145000,
+    runtime: 122,
+    overview: "Amélie is an innocent and naive girl in Paris with her own sense of justice.",
+    director: "Jean-Pierre Jeunet",
+    cast: ["Audrey Tautou", "Mathieu Kassovitz"]
+  },
+  {
+    id: "portrait-of-a-lady-on-fire",
+    title: "Portrait of a Lady on Fire",
+    year: 2019,
+    type: "movie",
+    language: "fr",
+    genres: ["Drama", "Romance"],
+    themes: ["18th Century Brittany", "Painter & Model", "Passionate Love"],
+    traktRating: 8.5,
+    votes: 92000,
+    runtime: 122,
+    overview: "On an isolated island in Brittany at the end of the eighteenth century, a female painter is obliged to paint a wedding portrait.",
+    director: "Céline Sciamma",
+    cast: ["Noémie Merlant", "Adèle Haenel"]
+  },
+
+  // --- SPANISH CINEMA ---
+  {
+    id: "pans-labyrinth",
+    title: "Pan's Labyrinth",
+    year: 2006,
+    type: "movie",
+    language: "es",
+    genres: ["Fantasy", "Drama", "War", "Horror", "Thriller"],
+    themes: ["Fascist Spain 1944", "Faun & Labyrinth", "Dark Fairy Tale"],
+    traktRating: 8.6,
+    votes: 168000,
+    runtime: 118,
+    overview: "In the Falangist Spain of 1944, the bookish young stepdaughter of a sadistic army officer escapes into an eerie fantasy world.",
+    director: "Guillermo del Toro",
+    cast: ["Ivana Baquero", "Sergi López", "Maribel Verdú"]
+  },
+
+  // --- ITALIAN & GERMAN CINEMA ---
+  {
+    id: "life-is-beautiful",
+    title: "Life Is Beautiful",
+    year: 1997,
+    type: "movie",
+    language: "it",
+    genres: ["Drama", "Comedy", "Romance"],
+    themes: ["WWII Italy", "Fatherly Love", "Holocaust Dignity", "Oscar Winner"],
+    traktRating: 8.6,
+    votes: 152000,
+    runtime: 116,
+    overview: "When an open-minded Jewish waiter and his son become victims of the Holocaust, he uses a perfect mixture of will, humor, and imagination to protect his son.",
+    director: "Roberto Benigni",
+    cast: ["Roberto Benigni", "Nicoletta Braschi"]
+  },
+
+  // --- JAPANESE & ANIME ---
+  {
+    id: "spirited-away",
+    title: "Spirited Away",
+    year: 2001,
+    type: "movie",
+    language: "ja",
+    genres: ["Animation", "Adventure", "Family", "Fantasy"],
+    themes: ["Spirit World", "Bathhouse", "Studio Ghibli", "Oscar Winner"],
+    traktRating: 8.9,
+    votes: 198000,
+    runtime: 125,
+    overview: "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits.",
+    director: "Hayao Miyazaki",
+    cast: ["Rumi Hiiragi", "Miyu Irino"]
+  },
+  {
+    id: "your-name",
+    title: "Your Name.",
+    year: 2016,
+    type: "movie",
+    language: "ja",
+    genres: ["Animation", "Drama", "Fantasy", "Romance"],
+    themes: ["Body Swapping", "Comet Impact", "Fate & Time"],
+    traktRating: 8.8,
+    votes: 142000,
+    runtime: 106,
+    overview: "Two strangers find themselves linked in a bizarre way. When a connection forms, will distance be the only thing to keep them apart?",
+    director: "Makoto Shinkai",
+    cast: ["Ryunosuke Kamiki", "Mone Kamishibai"]
+  },
+  {
+    id: "akira",
+    title: "Akira",
+    year: 1988,
+    type: "movie",
+    language: "ja",
+    genres: ["Animation", "Science Fiction", "Action", "Cyberpunk"],
+    themes: ["Neo-Tokyo 2019", "Psychokinetic Power", "Biker Gang", "Cyberpunk Classic"],
+    traktRating: 8.1,
+    votes: 89000,
+    runtime: 124,
+    overview: "A secret military project endangers Neo-Tokyo when it turns a biker gang member into a rampaging psychic psychopath.",
+    director: "Katsuhiro Otomo",
+    cast: ["Mitsuo Iwata", "Nozomu Sasaki"]
+  },
+
+  // --- KOREAN CINEMA & SHOWS ---
+  {
+    id: "parasite",
+    title: "Parasite",
+    year: 2019,
+    type: "movie",
+    language: "ko",
+    genres: ["Drama", "Thriller", "Comedy"],
+    themes: ["Social Inequality", "Dark Satire", "Oscar Best Picture"],
+    traktRating: 8.7,
+    votes: 215000,
+    runtime: 132,
+    overview: "Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.",
+    director: "Bong Joon-ho",
+    cast: ["Song Kang-ho", "Lee Sun-kyun", "Cho Yeo-jeong"]
+  },
+  {
+    id: "squid-game",
+    title: "Squid Game",
+    year: 2021,
+    type: "show",
+    language: "ko",
+    genres: ["Action", "Drama", "Mystery", "Thriller"],
+    themes: ["Deadly Survival Games", "Debt Crisis", "Social Satire"],
+    traktRating: 8.4,
+    votes: 189000,
+    runtime: 55,
+    overview: "Hundreds of cash-strapped players accept a strange invitation to compete in children's games with a 45.6 billion-won prize.",
+    director: "Hwang Dong-hyuk",
+    cast: ["Lee Jung-jae", "Park Hae-soo", "Wi Ha-joon"]
+  },
+
+  // --- HOLLYWOOD STARS & DIRECTORS ---
+  {
+    id: "forrest-gump",
+    title: "Forrest Gump",
+    year: 1994,
+    type: "movie",
+    genres: ["Drama", "Romance"],
+    themes: ["American History", "Pure Heart", "Oscar Winner"],
+    traktRating: 8.8,
+    votes: 210000,
+    runtime: 142,
+    overview: "The history of the United States from the 1950s to the '70s unfolds through the perspective of an Alabama man with an IQ of 75.",
+    director: "Robert Zemeckis",
+    cast: ["Tom Hanks", "Robin Wright", "Gary Sinise"]
+  },
+  {
+    id: "training-day",
+    title: "Training Day",
+    year: 2001,
+    type: "movie",
+    genres: ["Crime", "Drama", "Thriller"],
+    themes: ["Corrupt Cop", "Rookie Evaluation", "LAPD Street Culture"],
+    traktRating: 7.7,
+    votes: 110000,
+    runtime: 122,
+    overview: "A rookie cop spends his first day as a Los Angeles narcotics officer with a rogue detective who isn't what he appears to be.",
+    director: "Antoine Fuqua",
+    cast: ["Denzel Washington", "Ethan Hawke"]
+  },
+  {
+    id: "the-dark-knight",
+    title: "The Dark Knight",
+    year: 2008,
+    type: "movie",
+    genres: ["Action", "Crime", "Drama", "Thriller"],
+    themes: ["Joker Chaos", "Gotham Vigilante", "Moral Fallability"],
+    traktRating: 9.0,
+    votes: 280000,
+    runtime: 152,
+    overview: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological tests.",
+    director: "Christopher Nolan",
+    cast: ["Christian Bale", "Heath Ledger", "Aaron Eckhart"]
+  },
+  {
+    id: "top-gun-1986",
+    title: "Top Gun",
+    year: 1986,
+    type: "movie",
+    genres: ["Action", "Drama"],
+    themes: ["Naval Aviators", "80s Action Classic", "F-14 Tomcat"],
+    traktRating: 7.2,
+    votes: 98000,
+    runtime: 110,
+    overview: "As students at the United States Navy's elite fighter weapons school compete to be best in the class, one daring young pilot learns a few things.",
+    director: "Tony Scott",
+    cast: ["Tom Cruise", "Kelly McGillis", "Val Kilmer"]
+  },
+
+  // --- BRAD PITT ---
   {
     id: "fight-club",
     title: "Fight Club",
     year: 1999,
     type: "movie",
     genres: ["Drama", "Thriller"],
-    themes: ["Dual Identity", "Anarchy", "Anti-Consumerism"],
+    themes: ["Dual Identity", "Anarchy", "Anti-Consumerism", "Psychological Thriller"],
     traktRating: 8.8,
     votes: 185000,
     runtime: 139,
@@ -124,13 +328,221 @@ export const DEMO_CATALOG_CANDIDATES = [
     year: 1995,
     type: "movie",
     genres: ["Crime", "Drama", "Mystery", "Thriller"],
-    themes: ["Seven Deadly Sins", "Grim Detective", "Serial Killer"],
+    themes: ["Seven Deadly Sins", "Grim Detective", "Serial Killer", "Neo-Noir"],
     traktRating: 8.7,
     votes: 172000,
     runtime: 127,
-    overview: "Two detectives hunt a serial killer who uses the seven deadly sins as his motives.",
+    overview: "Two detectives, a rookie and a veteran, hunt a serial killer who uses the seven deadly sins as his motives.",
     director: "David Fincher",
     cast: ["Brad Pitt", "Morgan Freeman", "Gwyneth Paltrow"]
+  },
+  {
+    id: "inglourious-basterds",
+    title: "Inglourious Basterds",
+    year: 2009,
+    type: "movie",
+    genres: ["Adventure", "Drama", "War", "Action", "Comedy"],
+    themes: ["Alternative History", "WWII Revenge", "Cinema Culture"],
+    traktRating: 8.6,
+    votes: 165000,
+    runtime: 153,
+    overview: "In Nazi-occupied France during WWII, a plan to assassinate Nazi leaders by a group of Jewish U.S. soldiers.",
+    director: "Quentin Tarantino",
+    cast: ["Brad Pitt", "Christoph Waltz", "Mélanie Laurent"]
+  },
+  {
+    id: "12-monkeys",
+    title: "12 Monkeys",
+    year: 1995,
+    type: "movie",
+    genres: ["Science Fiction", "Mystery", "Thriller"],
+    themes: ["Time Travel", "Viral Apocalypse", "Mental Asylum", "Dystopian"],
+    traktRating: 8.0,
+    votes: 82000,
+    runtime: 129,
+    overview: "In a future world devastated by disease, a convict is sent back in time to gather information.",
+    director: "Terry Gilliam",
+    cast: ["Bruce Willis", "Brad Pitt", "Madeleine Stowe"]
+  },
+  {
+    id: "moneyball",
+    title: "Moneyball",
+    year: 2011,
+    type: "movie",
+    genres: ["Biography", "Drama", "Sport"],
+    themes: ["Baseball Analytics", "Underdog Strategy", "Sports Management"],
+    traktRating: 8.1,
+    votes: 95000,
+    runtime: 133,
+    overview: "Oakland A's general manager Billy Beane's successful attempt to assemble a baseball team on a lean budget.",
+    director: "Bennett Miller",
+    cast: ["Brad Pitt", "Jonah Hill", "Philip Seymour Hoffman"]
+  },
+  {
+    id: "bullet-train",
+    title: "Bullet Train",
+    year: 2022,
+    type: "movie",
+    genres: ["Action", "Comedy", "Thriller"],
+    themes: ["High-Speed Train", "Interconnected Assassins", "Luck & Fate"],
+    traktRating: 7.7,
+    votes: 78000,
+    runtime: 126,
+    overview: "Five assassins aboard a swiftly-moving bullet train find out their missions have something in common.",
+    director: "David Leitch",
+    cast: ["Brad Pitt", "Joey King", "Aaron Taylor-Johnson"]
+  },
+  {
+    id: "once-upon-a-time-in-hollywood",
+    title: "Once Upon a Time in Hollywood",
+    year: 2019,
+    type: "movie",
+    genres: ["Comedy", "Drama"],
+    themes: ["1969 Hollywood", "Stuntman Loyalty", "Golden Age Cinema"],
+    traktRating: 8.0,
+    votes: 124000,
+    runtime: 161,
+    overview: "A faded television actor and his stunt double strive to achieve fame and success in 1969 Los Angeles.",
+    director: "Quentin Tarantino",
+    cast: ["Leonardo DiCaprio", "Brad Pitt", "Margot Robbie"]
+  },
+
+  // --- LEONARDO DICAPRIO ---
+  {
+    id: "inception",
+    title: "Inception",
+    year: 2010,
+    type: "movie",
+    genres: ["Science Fiction", "Action", "Adventure"],
+    themes: ["Dream Manipulation", "Heist", "Subconscious", "Mind-Bending"],
+    traktRating: 8.8,
+    votes: 210000,
+    runtime: 148,
+    overview: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea.",
+    director: "Christopher Nolan",
+    cast: ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page", "Tom Hardy"]
+  },
+
+  // --- TOM CRUISE ---
+  {
+    id: "top-gun-maverick",
+    title: "Top Gun: Maverick",
+    year: 2022,
+    type: "movie",
+    genres: ["Action", "Drama"],
+    themes: ["Fighter Jets", "Naval Aviators", "High G Dogfight"],
+    traktRating: 8.4,
+    votes: 140000,
+    runtime: 130,
+    overview: "After thirty years, Maverick is still pushing the envelope as a top naval aviator.",
+    director: "Joseph Kosinski",
+    cast: ["Tom Cruise", "Miles Teller", "Jennifer Connelly"]
+  },
+
+  // --- KEANU REEVES ---
+  {
+    id: "the-matrix",
+    title: "The Matrix",
+    year: 1999,
+    type: "movie",
+    genres: ["Science Fiction", "Action"],
+    themes: ["Simulated Reality", "Cyberpunk", "AI Rebellion", "Philosophical"],
+    traktRating: 8.7,
+    votes: 195000,
+    runtime: 136,
+    overview: "A computer hacker learns from mysterious rebels about the true nature of his reality.",
+    director: "Lana Wachowski, Lilly Wachowski",
+    cast: ["Keanu Reeves", "Laurence Fishburne", "Carrie-Anne Moss"]
+  },
+
+  // --- CILLIAN MURPHY & CHRISTOPHER NOLAN ---
+  {
+    id: "oppenheimer",
+    title: "Oppenheimer",
+    year: 2023,
+    type: "movie",
+    genres: ["Biography", "Drama", "History"],
+    themes: ["Atomic Bomb", "Manhattan Project", "Moral Agony", "Oscar Best Picture"],
+    traktRating: 8.7,
+    votes: 189000,
+    runtime: 180,
+    overview: "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.",
+    director: "Christopher Nolan",
+    cast: ["Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr."]
+  },
+
+  // --- RECENT 2020s SCI-FI MOVIES ---
+  {
+    id: "dune-part-two",
+    title: "Dune: Part Two",
+    year: 2024,
+    type: "movie",
+    genres: ["Science Fiction", "Adventure", "Drama"],
+    themes: ["Desert Planet Arrakis", "Fremen Messiah", "Space Empire"],
+    traktRating: 8.8,
+    votes: 165000,
+    runtime: 166,
+    overview: "Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.",
+    director: "Denis Villeneuve",
+    cast: ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"]
+  },
+  {
+    id: "alien-romulus",
+    title: "Alien: Romulus",
+    year: 2024,
+    type: "movie",
+    genres: ["Science Fiction", "Horror", "Thriller"],
+    themes: ["Deep Space Station", "Alien Xenomorph", "Claustrophobic Survival"],
+    traktRating: 8.1,
+    votes: 68000,
+    runtime: 119,
+    overview: "While scavenging a derelict space station, young colonizers come face to face with the most terrifying life form in the universe.",
+    director: "Fede Álvarez",
+    cast: ["Cailee Spaeny", "David Jonsson", "Archie Renaux"]
+  },
+
+  // --- SCI-FI & HORROR CLASSICS ---
+  {
+    id: "alien-1979",
+    title: "Alien",
+    year: 1979,
+    type: "movie",
+    genres: ["Science Fiction", "Horror"],
+    themes: ["Alien Creature", "Deep Space", "Cosmic Horror", "Xenomorph", "Claustrophobic"],
+    traktRating: 8.6,
+    votes: 142000,
+    runtime: 117,
+    overview: "The crew of a commercial spacecraft encounter a deadly lifeform after investigating a mysterious transmission.",
+    director: "Ridley Scott",
+    cast: ["Sigourney Weaver", "Tom Skerritt", "John Hurt"]
+  },
+  {
+    id: "the-thing-1982",
+    title: "The Thing",
+    year: 1982,
+    type: "movie",
+    genres: ["Science Fiction", "Horror", "Mystery"],
+    themes: ["Parasitic Shapeshifter", "Isolation", "Paranoia", "Cosmic Horror"],
+    traktRating: 8.6,
+    votes: 110000,
+    runtime: 109,
+    overview: "A research team in Antarctica is hunted by a shape-shifting alien that assumes the appearance of its victims.",
+    director: "John Carpenter",
+    cast: ["Kurt Russell", "Wilford Brimley", "Keith David"]
+  },
+  {
+    id: "gattaca",
+    title: "Gattaca",
+    year: 1997,
+    type: "movie",
+    genres: ["Science Fiction", "Drama", "Thriller"],
+    themes: ["Genetic Engineering", "Bioethics", "Futuristic Identity", "Neo-Noir"],
+    traktRating: 8.1,
+    votes: 76000,
+    runtime: 106,
+    overview: "A genetically inferior man assumes the identity of a superior one in order to pursue his lifelong dream of space travel.",
+    director: "Andrew Niccol",
+    cast: ["Ethan Hawke", "Uma Thurman", "Jude Law"]
   },
   {
     id: "prometheus",
@@ -147,17 +559,104 @@ export const DEMO_CATALOG_CANDIDATES = [
     cast: ["Noomi Rapace", "Michael Fassbender", "Charlize Theron"]
   },
   {
-    id: "alien-1979",
-    title: "Alien",
-    year: 1979,
+    id: "blade-runner-2049",
+    title: "Blade Runner 2049",
+    year: 2017,
     type: "movie",
-    genres: ["Science Fiction", "Horror"],
-    themes: ["Alien Creature", "Deep Space", "Cosmic Horror"],
-    traktRating: 8.6,
-    votes: 142000,
-    runtime: 117,
-    overview: "The crew of a commercial spacecraft encounter a deadly lifeform after investigating a mysterious transmission.",
-    director: "Ridley Scott",
-    cast: ["Sigourney Weaver", "Tom Skerritt", "John Hurt"]
+    genres: ["Science Fiction", "Drama", "Mystery", "Thriller"],
+    themes: ["Cyberpunk", "AI & Androids", "Neo-Noir", "Dystopian"],
+    traktRating: 8.5,
+    votes: 145000,
+    runtime: 164,
+    overview: "Young Blade Runner K's discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard.",
+    director: "Denis Villeneuve",
+    cast: ["Ryan Gosling", "Harrison Ford", "Ana de Armas"]
+  },
+  {
+    id: "interstellar",
+    title: "Interstellar",
+    year: 2014,
+    type: "movie",
+    genres: ["Science Fiction", "Drama", "Adventure"],
+    themes: ["Deep Space", "Wormholes & Time Dilation", "Cosmic Survival"],
+    traktRating: 8.7,
+    votes: 190000,
+    runtime: 169,
+    overview: "When Earth becomes uninhabitable, a team of ex-NASA pilots travels through a wormhole in search of a new home.",
+    director: "Christopher Nolan",
+    cast: ["Matthew McConaughey", "Anne Hathaway", "Jessica Chastain"]
+  },
+  {
+    id: "children-of-men",
+    title: "Children of Men",
+    year: 2006,
+    type: "movie",
+    genres: ["Science Fiction", "Drama", "Thriller"],
+    themes: ["Dystopian Future", "Human Extinction", "Gritty Realism"],
+    traktRating: 8.4,
+    votes: 89400,
+    runtime: 109,
+    overview: "In 2027, in a chaotic world in which women have become infertile, a former activist agrees to help transport a pregnant woman.",
+    director: "Alfonso Cuarón",
+    cast: ["Clive Owen", "Julianne Moore", "Chiwetel Ejiofor"]
+  },
+
+  // --- TV SHOWS ---
+  {
+    id: "severance",
+    title: "Severance",
+    year: 2022,
+    type: "show",
+    genres: ["Science Fiction", "Drama", "Mystery", "Thriller"],
+    themes: ["Corporate Dystopia", "Memory Manipulation", "Psychological Mystery"],
+    traktRating: 8.7,
+    votes: 56000,
+    runtime: 50,
+    overview: "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
+    director: "Ben Stiller",
+    cast: ["Adam Scott", "Zach Cherry", "Britt Lower", "Patricia Arquette"]
+  },
+  {
+    id: "dark",
+    title: "Dark",
+    year: 2017,
+    type: "show",
+    language: "de",
+    genres: ["Science Fiction", "Mystery", "Crime", "Drama"],
+    themes: ["Time Travel Paradox", "Multiverse", "Grim Atmosphere"],
+    traktRating: 8.9,
+    votes: 89000,
+    runtime: 60,
+    overview: "A family saga with a supernatural twist, set in a German town where two young children disappear.",
+    director: "Baran bo Odar",
+    cast: ["Louis Hofmann", "Karoline Eichhorn", "Lisa Vicari"]
+  },
+  {
+    id: "silo",
+    title: "Silo",
+    year: 2023,
+    type: "show",
+    genres: ["Science Fiction", "Drama", "Mystery"],
+    themes: ["Underground Silo", "Post-Apocalyptic", "Dystopia"],
+    traktRating: 8.3,
+    votes: 45600,
+    runtime: 50,
+    overview: "Men and women live in a giant underground silo with several regulations which they believe are in place to protect them.",
+    director: "Graham Yost",
+    cast: ["Rebecca Ferguson", "Common", "Tim Robbins"]
+  },
+  {
+    id: "scavengers-reign",
+    title: "Scavengers Reign",
+    year: 2023,
+    type: "show",
+    genres: ["Animation", "Science Fiction", "Adventure"],
+    themes: ["Alien Planet Ecosystem", "Deep Space Survival"],
+    traktRating: 8.8,
+    votes: 18200,
+    runtime: 25,
+    overview: "When a deep space freighter is damaged, its surviving crew becomes stranded on a beautiful yet unforgiving alien planet Vesta.",
+    director: "Joe Bennett, Charles Huettner",
+    cast: ["Sunita Mani", "Wrenn Schmidt", "Bob Stephenson"]
   }
 ];

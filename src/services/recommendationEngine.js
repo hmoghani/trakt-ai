@@ -48,12 +48,10 @@ export function analyzeUserProfile(watchedMovies = [], watchedShows = [], likedI
     }
   });
 
-  // Sort top genres & themes
   const sortedGenres = Object.keys(genreWeights).sort((a, b) => genreWeights[b] - genreWeights[a]);
   const sortedThemes = Object.keys(themesCounts).sort((a, b) => themesCounts[b] - themesCounts[a]);
   const topGenre = sortedGenres[0] || 'Science Fiction';
   
-  // Calculate genre percentages
   const totalGenreWeight = Object.values(genreWeights).reduce((a, b) => a + b, 0) || 1;
   const genreBreakdown = {};
   sortedGenres.forEach(g => {
@@ -147,8 +145,10 @@ function generateStructuredReasoning(item, userProfile, filters, referenceMatch,
   const points = [];
 
   // Point 1: Language, Reference Title or Actor Match
-  if (filters.langCode === 'fa') {
-    points.push(`🇮🇷 Farsi Cinema: Authentic Persian language title (${item.title})`);
+  if (filters.langCode) {
+    const langNames = { fa: 'Persian/Farsi', fr: 'French', es: 'Spanish', ja: 'Japanese', ko: 'Korean', it: 'Italian', de: 'German' };
+    const langName = langNames[filters.langCode] || filters.langCode.toUpperCase();
+    points.push(`🌐 Foreign Cinema: Authentic ${langName} title (${item.title})`);
   } else if (filters.personName) {
     points.push(`🎭 Actor Match: Stars ${filters.personName}`);
   } else if (referenceMatch) {
@@ -206,7 +206,6 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     referenceTitleKey = null
   } = filters;
 
-  // Deduplicate catalog candidates by unique ID / title
   const uniqueCandidatesMap = new Map();
   (catalogCandidates || []).forEach(item => {
     if (!item || !item.title) return;
@@ -217,16 +216,12 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   });
   const candidatesList = Array.from(uniqueCandidatesMap.values());
 
-  // Find reference title if present
   let referenceMatch = null;
   if (referenceTitleKey) {
     referenceMatch = REFERENCE_MEDIA.find(r => r.keywords.includes(referenceTitleKey.toLowerCase())) || null;
   }
 
-  // Determine effective target genre
   const targetGenre = (genre !== 'all') ? genre : (referenceMatch ? referenceMatch.genre : 'all');
-
-  // Should exclude animation automatically if reference is live-action adult or requested
   const shouldExcludeAnimation = excludeAnimation || (referenceMatch && referenceMatch.isLiveActionAdult);
 
   // 1. Strict Candidate Filter
@@ -241,7 +236,8 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 
     // Language Filter
     if (langCode) {
-      const itemLang = item.language || (item.title === 'A Separation' || item.title === 'The Salesman' || item.title === 'Children of Heaven' || item.title === 'Taste of Cherry' || item.title === 'About Elly' || item.title === 'Close-Up' ? 'fa' : 'en');
+      const farsiTitles = ['A Separation', 'The Salesman', 'Children of Heaven', 'Taste of Cherry', 'About Elly'];
+      const itemLang = item.language || (farsiTitles.includes(item.title) ? 'fa' : 'en');
       if (itemLang !== langCode) {
         return false;
       }
@@ -294,17 +290,14 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   const scored = filtered.map(item => {
     let score = 0;
 
-    // A. Language match score
     if (langCode && (item.language === langCode || langCode === 'fa')) {
       score += 45;
     }
 
-    // B. Actor / Person Match (up to 40 pts)
     if (personName) {
       score += 40;
     }
 
-    // C. Genre Overlap (up to 35 pts)
     const itemGenresNorm = (item.genres || []).map(g => normalizeGenre(g));
     if (targetGenre !== 'all' && itemGenresNorm.includes(normalizeGenre(targetGenre))) {
       score += 25;
@@ -316,12 +309,10 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       else if (rank >= 2) score += 4;
     });
 
-    // D. Trakt Quality Rating (up to 20 pts)
     if (item.traktRating) {
       score += Math.min(20, item.traktRating * 2);
     }
 
-    // Normalize Match Percentage (70% - 99%)
     const matchPercentage = Math.min(99, Math.max(65, Math.round((score / 90) * 100)));
 
     const yearRangeObj = {
@@ -368,7 +359,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     referenceTitleKey: null
   };
 
-  // 1. Language Intent Detection (Farsi / Persian, French, Spanish, Japanese, Korean)
+  // 1. Language Intent Detection
   const langMappings = [
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
     { keys: ['french', 'france'], code: 'fr' },
