@@ -146,8 +146,10 @@ const REFERENCE_MEDIA = [
 function generateStructuredReasoning(item, userProfile, filters, referenceMatch, matchScore) {
   const points = [];
 
-  // Point 1: Reference Title or Actor Match
-  if (filters.personName) {
+  // Point 1: Language, Reference Title or Actor Match
+  if (filters.langCode === 'fa') {
+    points.push(`🇮🇷 Farsi Cinema: Authentic Persian language title (${item.title})`);
+  } else if (filters.personName) {
     points.push(`🎭 Actor Match: Stars ${filters.personName}`);
   } else if (referenceMatch) {
     const themeOverlap = (item.themes || []).filter(t => (referenceMatch.themes || []).includes(t));
@@ -199,6 +201,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     excludeWatched = true,
     excludeAnimation = false,
     personName = null,
+    langCode = null,
     sortBy = 'matchScore',
     referenceTitleKey = null
   } = filters;
@@ -234,6 +237,14 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 
     if (mediaType !== 'all' && item.type !== mediaType) {
       return false;
+    }
+
+    // Language Filter
+    if (langCode) {
+      const itemLang = item.language || (item.title === 'A Separation' || item.title === 'The Salesman' || item.title === 'Children of Heaven' || item.title === 'Taste of Cherry' || item.title === 'About Elly' || item.title === 'Close-Up' ? 'fa' : 'en');
+      if (itemLang !== langCode) {
+        return false;
+      }
     }
 
     // Exclude animation if requested or implied by adult / live-action reference query
@@ -283,12 +294,17 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   const scored = filtered.map(item => {
     let score = 0;
 
-    // A. Actor / Person Match (up to 40 pts)
+    // A. Language match score
+    if (langCode && (item.language === langCode || langCode === 'fa')) {
+      score += 45;
+    }
+
+    // B. Actor / Person Match (up to 40 pts)
     if (personName) {
       score += 40;
     }
 
-    // B. Genre Overlap (up to 35 pts)
+    // C. Genre Overlap (up to 35 pts)
     const itemGenresNorm = (item.genres || []).map(g => normalizeGenre(g));
     if (targetGenre !== 'all' && itemGenresNorm.includes(normalizeGenre(targetGenre))) {
       score += 25;
@@ -299,15 +315,6 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       else if (rank === 1) score += 7;
       else if (rank >= 2) score += 4;
     });
-
-    // C. Theme Vector Similarity (up to 30 pts)
-    if (referenceMatch && referenceMatch.themes && item.themes) {
-      const sharedThemes = item.themes.filter(t => referenceMatch.themes.includes(t));
-      score += Math.min(30, sharedThemes.length * 15);
-    } else if (item.themes && userProfile.topThemes) {
-      const userMatchedThemes = item.themes.filter(t => userProfile.topThemes.includes(t));
-      score += Math.min(20, userMatchedThemes.length * 7);
-    }
 
     // D. Trakt Quality Rating (up to 20 pts)
     if (item.traktRating) {
@@ -323,7 +330,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       max: yearMode === 'range' ? maxYear : null
     };
 
-    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
+    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
 
     return {
       ...item,
@@ -344,7 +351,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Audience, Actor/Person & Animation Exclusion Detection
+ * Natural language agent parser with Audience, Actor/Person, Language & Animation Exclusion Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -357,23 +364,42 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     excludeWatched: true,
     excludeAnimation: false,
     personName: null,
+    langCode: null,
     referenceTitleKey: null
   };
 
-  // 1. Media type intent
+  // 1. Language Intent Detection (Farsi / Persian, French, Spanish, Japanese, Korean)
+  const langMappings = [
+    { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
+    { keys: ['french', 'france'], code: 'fr' },
+    { keys: ['spanish', 'spain', 'mexican'], code: 'es' },
+    { keys: ['japanese', 'japan'], code: 'ja' },
+    { keys: ['korean', 'korea'], code: 'ko' },
+    { keys: ['italian', 'italy'], code: 'it' },
+    { keys: ['german', 'germany'], code: 'de' }
+  ];
+
+  for (const l of langMappings) {
+    if (l.keys.some(k => text.includes(k))) {
+      result.langCode = l.code;
+      break;
+    }
+  }
+
+  // 2. Media type intent
   if (text.includes('movie') || text.includes('film')) {
     result.mediaType = 'movie';
   } else if (text.includes('tv') || text.includes('show') || text.includes('series')) {
     result.mediaType = 'show';
   }
 
-  // 2. Audience / Adult Intent & Animation Exclusion
+  // 3. Audience / Adult Intent & Animation Exclusion
   const adultKeywords = ['adult', 'adults', 'mature', 'r-rated', 'r rated', 'live action', 'live-action', 'no animation', 'not animated', 'no cartoons', 'non animated'];
   if (adultKeywords.some(kw => text.includes(kw))) {
     result.excludeAnimation = true;
   }
 
-  // 3. Actor / Person Intent Detection
+  // 4. Actor / Person Intent Detection
   const knownPeople = [
     { keys: ['brad pit', 'brad pitt'], name: 'Brad Pitt' },
     { keys: ['leonardo dicaprio', 'dicaprio'], name: 'Leonardo DiCaprio' },
@@ -385,7 +411,8 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     { keys: ['cillian murphy'], name: 'Cillian Murphy' },
     { keys: ['quentin tarantino'], name: 'Quentin Tarantino' },
     { keys: ['christopher nolan'], name: 'Christopher Nolan' },
-    { keys: ['ridley scott'], name: 'Ridley Scott' }
+    { keys: ['asghar farhadi'], name: 'Asghar Farhadi' },
+    { keys: ['abbas kiarostami'], name: 'Abbas Kiarostami' }
   ];
 
   for (const p of knownPeople) {
@@ -395,17 +422,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  if (!result.personName) {
-    const actorMatch = text.match(/(?:movies|shows|films)?\s*(?:with|starring|featuring)\s+([a-zA-Z\s]+)/i);
-    if (actorMatch) {
-      const rawName = actorMatch[1].replace(/(?:in it|movies|shows|films|for adults|recent|top)/gi, '').trim();
-      if (rawName.length > 2) {
-        result.personName = rawName.replace(/\b\w/g, l => l.toUpperCase());
-      }
-    }
-  }
-
-  // 4. Decade / Era intent
+  // 5. Decade / Era intent
   if (text.includes('90s') || text.includes('1990s') || text.includes('nineties')) {
     result.yearMode = 'decade';
     result.decade = '1990';
@@ -423,14 +440,14 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.decade = '2000';
   }
 
-  // 5. Exact year regex
+  // 6. Exact year regex
   const yearMatch = text.match(/\b(19\d\d|20\d\d)\b/);
   if (yearMatch && !result.decade) {
     result.yearMode = 'exact';
     result.exactYear = yearMatch[1];
   }
 
-  // 6. Reference Movie/Show Detection
+  // 7. Reference Movie/Show Detection
   for (const ref of REFERENCE_MEDIA) {
     if (ref.keywords.some(kw => text.includes(kw))) {
       result.referenceTitleKey = ref.keywords[0];
@@ -442,7 +459,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 7. Genre Keywords if no reference match
+  // 8. Genre Keywords if no reference match
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];

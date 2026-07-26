@@ -9,7 +9,7 @@ import HistoryViewer from './components/HistoryViewer';
 
 import { DEMO_GENRES, DEMO_USER_WATCHED, DEMO_USER_LIKES, DEMO_CATALOG_CANDIDATES } from './data/demoData';
 import { analyzeUserProfile, generateRecommendations } from './services/recommendationEngine';
-import { fetchUserWatched, fetchUserWatchlist, fetchUserCustomLists, fetchCustomListItems, fetchUserLikes, fetchGenres, fetchDeepCatalog, searchPersonFilmography, searchTraktMedia } from './services/traktApi';
+import { fetchUserWatched, fetchUserWatchlist, fetchUserCustomLists, fetchCustomListItems, fetchUserLikes, fetchGenres, fetchDeepCatalog, searchPersonFilmography, searchTraktMedia, fetchLanguageCatalog } from './services/traktApi';
 import { generateLLMRecommendations } from './services/llmService';
 
 export default function App() {
@@ -290,61 +290,94 @@ export default function App() {
 
     let currentCandidates = [...catalogCandidates];
 
-    // 1. Live Trakt Global Server Search across ALL movies & TV shows of all time
-    if (traktConfig.clientId) {
+    // 1. Specific Language Query (e.g. Farsi 'fa', French 'fr')
+    if (parsedFilters.langCode && traktConfig.clientId) {
       try {
         setIsLoading(true);
-        let liveSearchRes = [];
+        const langItems = await fetchLanguageCatalog(parsedFilters.langCode, { clientId: traktConfig.clientId });
+        if (langItems && langItems.length > 0) {
+          const map = new Map();
+          [...langItems, ...currentCandidates].forEach(c => {
+            const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
+            if (!map.has(key)) map.set(key, c);
+          });
+          currentCandidates = Array.from(map.values());
+          setCatalogCandidates(currentCandidates);
+        }
+      } catch (err) {
+        console.warn('Language catalog fetch notice:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-        if (parsedFilters.personName) {
-          // Actor / Person Filmography query across all Trakt
-          liveSearchRes = await searchPersonFilmography(parsedFilters.personName, { clientId: traktConfig.clientId });
-        } else {
-          // Keyword / Title / Theme Search across ALL movies of all time in Trakt
-          const searchMovies = await searchTraktMedia(promptText, 'movie', { clientId: traktConfig.clientId });
-          const searchShows = await searchTraktMedia(promptText, 'show', { clientId: traktConfig.clientId });
-          
-          const parsedLive = [];
-          if (Array.isArray(searchMovies)) {
-            searchMovies.forEach(item => {
-              const m = item.movie || item;
-              if (m.title) {
-                parsedLive.push({
-                  id: m.ids?.slug || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
-                  title: m.title,
-                  year: m.year || 2020,
-                  type: 'movie',
-                  genres: m.genres || ['Drama'],
-                  traktRating: m.rating || 8.0,
-                  overview: m.overview || '',
-                  ids: m.ids || {}
-                });
-              }
-            });
-          }
-          if (Array.isArray(searchShows)) {
-            searchShows.forEach(item => {
-              const s = item.show || item;
-              if (s.title) {
-                parsedLive.push({
-                  id: s.ids?.slug || s.title.toLowerCase().replace(/[\s\-_]+/g, ''),
-                  title: s.title,
-                  year: s.year || 2020,
-                  type: 'show',
-                  genres: s.genres || ['Drama'],
-                  traktRating: s.rating || 8.0,
-                  overview: s.overview || '',
-                  ids: s.ids || {}
-                });
-              }
-            });
-          }
-          liveSearchRes = parsedLive;
+    // 2. Specific Actor / Person Query (e.g. Brad Pitt)
+    else if (parsedFilters.personName && traktConfig.clientId) {
+      try {
+        setIsLoading(true);
+        const personFilmography = await searchPersonFilmography(parsedFilters.personName, { clientId: traktConfig.clientId });
+        if (personFilmography && personFilmography.length > 0) {
+          const map = new Map();
+          [...personFilmography, ...currentCandidates].forEach(c => {
+            const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
+            if (!map.has(key)) map.set(key, c);
+          });
+          currentCandidates = Array.from(map.values());
+          setCatalogCandidates(currentCandidates);
+        }
+      } catch (err) {
+        console.warn('Actor filmography search notice:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    // 3. Live Trakt Global Server Search across ALL movies & TV shows of all time
+    else if (traktConfig.clientId) {
+      try {
+        setIsLoading(true);
+        const searchMovies = await searchTraktMedia(promptText, 'movie', { clientId: traktConfig.clientId });
+        const searchShows = await searchTraktMedia(promptText, 'show', { clientId: traktConfig.clientId });
+        
+        const parsedLive = [];
+        if (Array.isArray(searchMovies)) {
+          searchMovies.forEach(item => {
+            const m = item.movie || item;
+            if (m.title) {
+              parsedLive.push({
+                id: m.ids?.slug || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
+                title: m.title,
+                year: m.year || 2020,
+                type: 'movie',
+                genres: m.genres || ['Drama'],
+                traktRating: m.rating || 8.0,
+                overview: m.overview || '',
+                ids: m.ids || {}
+              });
+            }
+          });
+        }
+        if (Array.isArray(searchShows)) {
+          searchShows.forEach(item => {
+            const s = item.show || item;
+            if (s.title) {
+              parsedLive.push({
+                id: s.ids?.slug || s.title.toLowerCase().replace(/[\s\-_]+/g, ''),
+                title: s.title,
+                year: s.year || 2020,
+                type: 'show',
+                genres: s.genres || ['Drama'],
+                traktRating: s.rating || 8.0,
+                overview: s.overview || '',
+                ids: s.ids || {}
+              });
+            }
+          });
         }
 
-        if (liveSearchRes && liveSearchRes.length > 0) {
+        if (parsedLive.length > 0) {
           const map = new Map();
-          [...liveSearchRes, ...currentCandidates].forEach(c => {
+          [...parsedLive, ...currentCandidates].forEach(c => {
             const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
             if (!map.has(key)) map.set(key, c);
           });
@@ -358,7 +391,7 @@ export default function App() {
       }
     }
 
-    // 2. Query Gemini LLM with expanded candidate pool
+    // 4. Query Gemini LLM with expanded candidate pool
     try {
       const savedLlm = localStorage.getItem('trakt_llm_config');
       const llmConfig = savedLlm ? JSON.parse(savedLlm) : {

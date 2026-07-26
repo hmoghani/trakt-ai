@@ -1,4 +1,4 @@
-// Trakt API Client Service with 1000-Title Catalog Loader, People/Actor Search, Watchlist & Custom Lists Support
+// Trakt API Client Service with 1000-Title Catalog Loader, People/Actor Search, Language Filtering, Watchlist & Custom Lists Support
 
 const TRAKT_BASE_URL = 'https://api.trakt.tv';
 
@@ -46,13 +46,63 @@ async function traktFetch(endpoint, { clientId, bearerToken = null, params = {} 
 }
 
 /**
+ * Fetch Foreign / Specific Language Movies & TV Shows from Trakt (e.g. Farsi 'fa', French 'fr', Spanish 'es')
+ */
+export async function fetchLanguageCatalog(langCode = 'fa', { clientId }) {
+  if (!clientId || !clientId.trim()) return [];
+  try {
+    const movies = await traktFetch(`/movies/popular?languages=${langCode}&extended=full&limit=30`, { clientId });
+    const shows = await traktFetch(`/shows/popular?languages=${langCode}&extended=full&limit=30`, { clientId });
+    
+    const results = [];
+    if (Array.isArray(movies)) {
+      movies.forEach(m => {
+        if (m.title) {
+          results.push({
+            id: m.ids?.slug || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
+            title: m.title,
+            year: m.year,
+            type: 'movie',
+            genres: m.genres || ['Drama'],
+            traktRating: m.rating || 8.0,
+            overview: m.overview || '',
+            language: langCode,
+            ids: m.ids || {}
+          });
+        }
+      });
+    }
+    if (Array.isArray(shows)) {
+      shows.forEach(s => {
+        if (s.title) {
+          results.push({
+            id: s.ids?.slug || s.title.toLowerCase().replace(/[\s\-_]+/g, ''),
+            title: s.title,
+            year: s.year,
+            type: 'show',
+            genres: s.genres || ['Drama'],
+            traktRating: s.rating || 8.0,
+            overview: s.overview || '',
+            language: langCode,
+            ids: s.ids || {}
+          });
+        }
+      });
+    }
+    return results;
+  } catch (e) {
+    console.warn(`Failed to fetch language catalog for ${langCode}:`, e.message);
+    return [];
+  }
+}
+
+/**
  * Search Trakt People Graph (Actor / Director) and fetch their official filmography
  */
 export async function searchPersonFilmography(personName = '', { clientId }) {
   if (!personName || !personName.trim()) return [];
 
   try {
-    // 1. Search person by name
     const searchRes = await traktFetch(`/search/person`, {
       clientId,
       params: { query: personName.trim(), extended: 'full', limit: 5 }
@@ -66,8 +116,6 @@ export async function searchPersonFilmography(personName = '', { clientId }) {
     if (!person || !person.ids?.slug) return [];
 
     const slug = person.ids.slug;
-
-    // 2. Fetch movies starring this person
     const moviesRes = await traktFetch(`/people/${slug}/movies?extended=full`, { clientId });
     
     const results = [];
