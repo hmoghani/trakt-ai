@@ -75,53 +75,68 @@ export function analyzeUserProfile(watchedMovies = [], watchedShows = [], likedI
  */
 const REFERENCE_MEDIA = [
   {
-    keywords: ['alien', 'xenomorph', 'prometheus'],
+    keywords: ['alien', 'xenomorph', 'romulus'],
     title: 'Alien',
     genre: 'Science Fiction',
     secondaryGenres: ['Horror', 'Thriller'],
-    themes: ['Alien Creature', 'Deep Space', 'Cosmic Horror', 'Claustrophobic Survival']
+    themes: ['Alien Creature', 'Deep Space', 'Cosmic Horror', 'Claustrophobic Survival'],
+    isLiveActionAdult: true
+  },
+  {
+    keywords: ['prometheus', 'alien covenant', 'covenant', 'engineer'],
+    title: 'Prometheus',
+    genre: 'Science Fiction',
+    secondaryGenres: ['Horror', 'Mystery', 'Thriller'],
+    themes: ['Deep Space', 'Cosmic Horror', 'Alien Prequel', 'Engineers', 'AI Android', 'Claustrophobic Survival'],
+    isLiveActionAdult: true
   },
   {
     keywords: ['blade runner', 'blade runner 2049', 'deckard'],
     title: 'Blade Runner',
     genre: 'Science Fiction',
     secondaryGenres: ['Drama', 'Mystery'],
-    themes: ['Cyberpunk', 'AI & Androids', 'Neo-Noir', 'Dystopian']
+    themes: ['Cyberpunk', 'AI & Androids', 'Neo-Noir', 'Dystopian'],
+    isLiveActionAdult: true
   },
   {
     keywords: ['interstellar', 'wormhole'],
     title: 'Interstellar',
     genre: 'Science Fiction',
     secondaryGenres: ['Drama', 'Adventure'],
-    themes: ['Deep Space', 'Wormholes & Time Dilation', 'Cosmic Survival']
+    themes: ['Deep Space', 'Wormholes & Time Dilation', 'Cosmic Survival'],
+    isLiveActionAdult: true
   },
   {
     keywords: ['matrix', 'neo'],
     title: 'The Matrix',
     genre: 'Science Fiction',
     secondaryGenres: ['Action'],
-    themes: ['Simulated Reality', 'Cyberpunk', 'AI Rebellion']
+    themes: ['Simulated Reality', 'Cyberpunk', 'AI Rebellion'],
+    isLiveActionAdult: true
   },
   {
     keywords: ['dark', 'time travel'],
     title: 'Dark',
     genre: 'Science Fiction',
     secondaryGenres: ['Mystery', 'Drama'],
-    themes: ['Time Travel Paradox', 'Multiverse', 'Grim Atmosphere']
+    themes: ['Time Travel Paradox', 'Multiverse', 'Grim Atmosphere'],
+    isLiveActionAdult: true
   },
   {
     keywords: ['severance', 'lumon'],
     title: 'Severance',
     genre: 'Science Fiction',
     secondaryGenres: ['Thriller', 'Mystery'],
-    themes: ['Corporate Dystopia', 'Memory Manipulation', 'Psychological Mystery']
+    themes: ['Corporate Dystopia', 'Memory Manipulation', 'Psychological Mystery'],
+    isLiveActionAdult: true
   },
   {
     keywords: ['the thing', 'john carpenter'],
     title: 'The Thing',
     genre: 'Science Fiction',
     secondaryGenres: ['Horror', 'Mystery'],
-    themes: ['Parasitic Shapeshifter', 'Isolation', 'Paranoia', 'Cosmic Horror']
+    themes: ['Parasitic Shapeshifter', 'Isolation', 'Paranoia', 'Cosmic Horror'],
+    isLiveActionAdult: true
   }
 ];
 
@@ -168,7 +183,7 @@ function generateStructuredReasoning(item, userProfile, filters, referenceMatch,
 }
 
 /**
- * Main recommendation function: Multi-vector semantic scoring and deduplication
+ * Main recommendation function: Multi-vector semantic scoring, animation exclusion, and deduplication
  */
 export function generateRecommendations(catalogCandidates = [], userProfile, filters = {}, watchedIds = new Set()) {
   const {
@@ -180,11 +195,12 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     minYear = 1970,
     maxYear = 2026,
     excludeWatched = true,
+    excludeAnimation = false,
     sortBy = 'matchScore',
     referenceTitleKey = null
   } = filters;
 
-  // Deduplicate catalog candidates by unique ID / title to prevent duplicate cards
+  // Deduplicate catalog candidates by unique ID / title
   const uniqueCandidatesMap = new Map();
   (catalogCandidates || []).forEach(item => {
     if (!item || !item.title) return;
@@ -204,7 +220,10 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   // Determine effective target genre
   const targetGenre = (genre !== 'all') ? genre : (referenceMatch ? referenceMatch.genre : 'all');
 
-  // 1. Strict Candidate Filter with Hyphen/Space Resilience
+  // Should exclude animation automatically if reference is live-action adult or requested
+  const shouldExcludeAnimation = excludeAnimation || (referenceMatch && referenceMatch.isLiveActionAdult);
+
+  // 1. Strict Candidate Filter
   const filtered = candidatesList.filter(item => {
     if (excludeWatched && watchedIds.has(item.id)) {
       return false;
@@ -212,6 +231,14 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 
     if (mediaType !== 'all' && item.type !== mediaType) {
       return false;
+    }
+
+    // Exclude animation if requested or implied by adult / live-action reference query
+    if (shouldExcludeAnimation) {
+      const isAnimated = (item.genres || []).some(g => normalizeGenre(g) === 'animation' || normalizeGenre(g) === 'anime');
+      if (isAnimated) {
+        return false;
+      }
     }
 
     // Strict Genre Exclusion: Candidate MUST contain target genre (or secondary reference genre)
@@ -307,7 +334,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Reference Title Extraction
+ * Natural language agent parser with Audience & Animation Exclusion Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -318,6 +345,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     exactYear: '',
     decade: '',
     excludeWatched: true,
+    excludeAnimation: false,
     referenceTitleKey: null
   };
 
@@ -328,7 +356,13 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.mediaType = 'show';
   }
 
-  // 2. Decade / Era intent
+  // 2. Audience / Adult Intent & Animation Exclusion
+  const adultKeywords = ['adult', 'adults', 'mature', 'r-rated', 'r rated', 'live action', 'live-action', 'no animation', 'not animated', 'no cartoons', 'non animated'];
+  if (adultKeywords.some(kw => text.includes(kw))) {
+    result.excludeAnimation = true;
+  }
+
+  // 3. Decade / Era intent
   if (text.includes('90s') || text.includes('1990s') || text.includes('nineties')) {
     result.yearMode = 'decade';
     result.decade = '1990';
@@ -346,23 +380,26 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.decade = '2000';
   }
 
-  // 3. Exact year regex
+  // 4. Exact year regex
   const yearMatch = text.match(/\b(19\d\d|20\d\d)\b/);
   if (yearMatch && !result.decade) {
     result.yearMode = 'exact';
     result.exactYear = yearMatch[1];
   }
 
-  // 4. Reference Movie/Show Detection
+  // 5. Reference Movie/Show Detection
   for (const ref of REFERENCE_MEDIA) {
     if (ref.keywords.some(kw => text.includes(kw))) {
       result.referenceTitleKey = ref.keywords[0];
       result.genre = ref.genre;
+      if (ref.isLiveActionAdult) {
+        result.excludeAnimation = true;
+      }
       break;
     }
   }
 
-  // 5. Genre Keywords if no reference match
+  // 6. Genre Keywords if no reference match
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];

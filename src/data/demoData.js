@@ -132,6 +132,34 @@ export const DEMO_USER_LIKES = [
 
 export const DEMO_CATALOG_CANDIDATES = [
   {
+    id: "prometheus",
+    title: "Prometheus",
+    year: 2012,
+    type: "movie",
+    genres: ["Science Fiction", "Horror", "Mystery", "Thriller"],
+    themes: ["Deep Space", "Cosmic Horror", "Alien Prequel", "Engineers", "AI Android", "Claustrophobic Survival"],
+    traktRating: 7.9,
+    votes: 115000,
+    runtime: 124,
+    overview: "Following clues to the origin of mankind, a team finds a structure on a distant moon, but they soon realize they are not alone.",
+    director: "Ridley Scott",
+    cast: ["Noomi Rapace", "Michael Fassbender", "Charlize Theron"]
+  },
+  {
+    id: "alien-covenant",
+    title: "Alien: Covenant",
+    year: 2017,
+    type: "movie",
+    genres: ["Science Fiction", "Horror", "Thriller"],
+    themes: ["Deep Space", "Cosmic Horror", "Neomorph", "AI Android", "Survival"],
+    traktRating: 7.4,
+    votes: 85000,
+    runtime: 122,
+    overview: "The crew of a colony ship, bound for a remote planet, discover an uncharted paradise with a dark secret in this Alien franchise installment.",
+    director: "Ridley Scott",
+    cast: ["Michael Fassbender", "Katherine Waterston", "Billy Crudup"]
+  },
+  {
     id: "alien-romulus",
     title: "Alien: Romulus",
     year: 2024,
@@ -141,7 +169,6 @@ export const DEMO_CATALOG_CANDIDATES = [
     traktRating: 8.1,
     votes: 29500,
     runtime: 119,
-    poster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80",
     overview: "While scavenging the deep ends of a derelict space station, a group of young space colonizers comes face to face with the most terrifying life form in the universe.",
     director: "Fede Álvarez",
     cast: ["Cailee Spaeny", "David Jonsson", "Archie Renaux"]
@@ -187,6 +214,34 @@ export const DEMO_CATALOG_CANDIDATES = [
     overview: "A research team in Antarctica is hunted by a shape-shifting alien that assumes the appearance of its victims.",
     director: "John Carpenter",
     cast: ["Kurt Russell", "Wilford Brimley", "Keith David"]
+  },
+  {
+    id: "annihilation",
+    title: "Annihilation",
+    year: 2018,
+    type: "movie",
+    genres: ["Science Fiction", "Horror", "Mystery", "Drama"],
+    themes: ["Alien Mutation", "The Shimmer", "Cosmic Horror", "Psychological Expedition"],
+    traktRating: 7.7,
+    votes: 92000,
+    runtime: 115,
+    overview: "A biologist signs up for a dangerous, secret expedition into a mysterious zone where the laws of nature don't apply.",
+    director: "Alex Garland",
+    cast: ["Natalie Portman", "Jennifer Jason Leigh", "Tessa Thompson"]
+  },
+  {
+    id: "event-horizon",
+    title: "Event Horizon",
+    year: 1997,
+    type: "movie",
+    genres: ["Science Fiction", "Horror", "Mystery"],
+    themes: ["Deep Space", "Haunted Starship", "Cosmic Horror", "Hellish Dimension"],
+    traktRating: 7.3,
+    votes: 68000,
+    runtime: 96,
+    overview: "A rescue crew investigates a spaceship that disappeared into a black hole and has now returned... with something sinister aboard.",
+    director: "Paul W.S. Anderson",
+    cast: ["Laurence Fishburne", "Sam Neill", "Kathleen Quinlan"]
   },
   {
     id: "the-creator",
