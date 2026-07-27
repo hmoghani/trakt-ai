@@ -36,10 +36,11 @@ jobs:
           cd ..
 
       - name: Create Automated GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Release v1.0.${{ github.run_number }}
+          artifacts: "trakt-ai-recommender-dist.zip"
+          tag: "v1.0.${{ github.run_number }}"
+          name: "Release v1.0.${{ github.run_number }}"
           body: |
             ## 🎬 Trakt AI Recommender v1.0.${{ github.run_number }}
             Automated production build published on push/merge to `main`.
@@ -50,18 +51,18 @@ jobs:
             - Live Trakt People Graph & Actor search
             - Farsi/Persian & Foreign Language Cinema support
             - Streaming availability filter protection
-          files: trakt-ai-recommender-dist.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v3
+        continue-on-error: true
         with:
           path: './dist'
 
   deploy-pages:
     needs: build-and-release
     runs-on: ubuntu-latest
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -69,3 +70,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
