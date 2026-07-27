@@ -1,0 +1,71 @@
+name: Build, Release & Publish
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Production Bundle
+        run: npm run build
+
+      - name: Package Release Assets
+        run: |
+          cd dist
+          zip -r ../trakt-ai-recommender-dist.zip .
+          cd ..
+
+      - name: Create Automated GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body: |
+            ## 🎬 Trakt AI Recommender v1.0.${{ github.run_number }}
+            Automated production build published on push/merge to `main`.
+            
+            ### Included in this Release:
+            - Production static web assets (`dist/`)
+            - Google Gemini 1.5 Flash & Groq LLM integration
+            - Live Trakt People Graph & Actor search
+            - Farsi/Persian & Foreign Language Cinema support
+            - Streaming availability filter protection
+          files: trakt-ai-recommender-dist.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload GitHub Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy-pages:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
