@@ -103,10 +103,14 @@ export default function AgentChat({ onAgentQuery, genresList = [] }) {
             </span>
           )}
           {activeEngineInfo.type === 'rule' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Engine: Multi-Vector Rules</span>
-            </span>
+            <button
+              type="button"
+              onClick={() => onAgentQuery({ openSettings: true })}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-rose-950/60 text-rose-300 border border-rose-700/60 hover:bg-rose-900/80 transition-all shadow-md animate-pulse"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>🔑 Free API Key Required (Click to Setup)</span>
+            </button>
           )}
         </div>
       </div>

@@ -282,7 +282,31 @@ export default function App() {
 
   // Agent Natural Prompt Query Handler
   const handleAgentQuery = async (parsedFilters, promptText) => {
+    if (parsedFilters?.openSettings) {
+      setIsSettingsOpen(true);
+      return;
+    }
+
     setLlmResults(null);
+    setErrorMsg(null);
+
+    const savedLlm = localStorage.getItem('trakt_llm_config');
+    const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
+      provider: 'gemini',
+      geminiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+      groqKey: import.meta.env.VITE_GROQ_API_KEY || ''
+    };
+
+    const hasApiKey = (llmConfig.provider === 'gemini' && llmConfig.geminiKey && llmConfig.geminiKey.trim()) ||
+                      (llmConfig.provider === 'groq' && llmConfig.groqKey && llmConfig.groqKey.trim());
+
+    // STRICT REQUIREMENT: User MUST provide Gemini or Groq API Key for AI Recommender
+    if (!hasApiKey) {
+      setErrorMsg('🔑 AI LLM API Key Required: Please enter your free Google Gemini or Groq API key in Settings to activate AI media recommendations.');
+      setIsSettingsOpen(true);
+      return;
+    }
+
     setFilters(prev => ({
       ...prev,
       ...parsedFilters
@@ -300,13 +324,6 @@ export default function App() {
       if (!map.has(key)) map.set(key, c);
     });
     let currentCandidates = Array.from(map.values());
-
-    const savedLlm = localStorage.getItem('trakt_llm_config');
-    const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
-      provider: 'gemini',
-      geminiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
-      groqKey: import.meta.env.VITE_GROQ_API_KEY || ''
-    };
 
     let activeFilters = { ...parsedFilters };
 
