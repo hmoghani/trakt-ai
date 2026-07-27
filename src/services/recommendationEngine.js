@@ -276,10 +276,10 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       if (isStudioBlockbuster && !item.isIndieGem) return false;
     }
 
-    // Negative constraints: No US / No American
+    // Negative constraints: No US / Foreign
     if (excludeUS) {
-      const isUS = item.country === 'US' || (!item.language && !item.country && !item.isEuropean);
-      if (isUS && item.language === 'en' && !item.isEuropean) return false;
+      const isEuropeanOrForeign = item.isEuropean || (item.language && item.language !== 'en') || (item.country && item.country !== 'US');
+      if (!isEuropeanOrForeign) return false;
     }
 
     // Negative constraints: No Asian
@@ -461,7 +461,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   }
 
   // 2. Negative & Blockbuster Exclusion Detection
-  if (text.includes('no us') || text.includes('no american') || text.includes('non us') || text.includes('non-us') || text.includes('outside us')) {
+  if (text.includes('foreign') || text.includes('international') || text.includes('no us') || text.includes('no american') || text.includes('non us') || text.includes('non-us') || text.includes('outside us')) {
     result.excludeUS = true;
   }
   if (text.includes('no asian') || text.includes('non asian') || text.includes('non-asian')) {
