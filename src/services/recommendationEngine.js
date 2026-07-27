@@ -144,7 +144,9 @@ const REFERENCE_MEDIA = [
 function generateStructuredReasoning(item, userProfile, filters, referenceMatch, matchScore) {
   const points = [];
 
-  if (filters.preferEuropean || item.isEuropean) {
+  if (filters.preferIndieGems || item.isIndieGem) {
+    points.push(`🎨 Independent Cinema: Authentic indie title (${item.title})`);
+  } else if (filters.preferEuropean || item.isEuropean) {
     points.push(`🇪🇺 European Cinema: Intelligent non-US film (${item.title})`);
   } else if (filters.isWatchedQuery || item.isWatched) {
     points.push(`👁️ From Your Watched History (User Rating: ${item.userRating ? item.userRating + '/10' : 'Watched'})`);
@@ -250,10 +252,19 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       return false;
     }
 
-    // Exclude mainstream blockbusters if explicitly requested ("not the big blockbusters")
-    if (excludeBlockbusters) {
-      const isHighProfileBlockbuster = item.isBlockbuster || (item.votes && item.votes > 90000);
-      if (isHighProfileBlockbuster) return false;
+    // Exclude mainstream studio blockbusters if user asked for indie movies / not blockbusters
+    if (excludeBlockbusters || preferIndieGems) {
+      const titleLower = item.title?.toLowerCase() || '';
+      const isStudioBlockbuster = 
+        item.isBlockbuster || 
+        (item.votes && item.votes > 80000) || 
+        titleLower.includes('moana') || 
+        titleLower.includes('frozen') || 
+        titleLower.includes('toy story') || 
+        titleLower.includes('avengers') || 
+        titleLower.includes('inside out');
+
+      if (isStudioBlockbuster && !item.isIndieGem) return false;
     }
 
     // Negative constraints: No US / No American
@@ -346,12 +357,12 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   const scored = filtered.map(item => {
     let score = 0;
 
-    if (preferEuropean && (item.isEuropean || europeanLangs.includes(item.language))) {
+    if (preferIndieGems && (item.isIndieGem || (item.votes && item.votes < 50000))) {
       score += 45;
     }
 
-    if (preferIndieGems && (item.isIndieGem || (item.votes && item.votes < 50000))) {
-      score += 35;
+    if (preferEuropean && (item.isEuropean || europeanLangs.includes(item.language))) {
+      score += 40;
     }
 
     if (isWatchedQuery || item.isWatched) {
@@ -389,7 +400,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       max: yearMode === 'range' ? maxYear : null
     };
 
-    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, preferEuropean, isWatchedQuery, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
+    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, preferEuropean, preferIndieGems, isWatchedQuery, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
 
     return {
       ...item,
@@ -444,10 +455,18 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   if (text.includes('european') || text.includes('europe')) {
     result.preferEuropean = true;
   }
-  if (text.includes('not blockbusters') || text.includes('not the big blockbusters') || text.includes('no blockbusters') || text.includes('not mainstream')) {
+  if (
+    text.includes('indie') || 
+    text.includes('indies') || 
+    text.includes('independent') || 
+    text.includes('not blockbusters') || 
+    text.includes('not the big blockbusters') || 
+    text.includes('no blockbusters') || 
+    text.includes('not mainstream')
+  ) {
     result.excludeBlockbusters = true;
     result.preferIndieGems = true;
-  } else if (text.includes('gems') || text.includes('gem') || text.includes('indie') || text.includes('obscure')) {
+  } else if (text.includes('gems') || text.includes('gem') || text.includes('obscure')) {
     result.preferIndieGems = true;
   }
 
