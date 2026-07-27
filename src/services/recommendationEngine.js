@@ -263,12 +263,15 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       const titleLower = item.title?.toLowerCase() || '';
       const isStudioBlockbuster = 
         item.isBlockbuster || 
-        (item.votes && item.votes > 80000) || 
+        (item.votes && item.votes > 65000) || 
         titleLower.includes('moana') || 
         titleLower.includes('frozen') || 
         titleLower.includes('toy story') || 
         titleLower.includes('avengers') || 
-        titleLower.includes('inside out');
+        titleLower.includes('inside out') ||
+        titleLower.includes('puss in boots') ||
+        titleLower.includes('bullet train') ||
+        titleLower.includes('alien: romulus');
 
       if (isStudioBlockbuster && !item.isIndieGem) return false;
     }
