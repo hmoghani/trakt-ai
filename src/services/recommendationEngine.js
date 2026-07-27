@@ -503,20 +503,42 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.requireStreaming = true;
   }
 
-  // 5. Language Intent Detection
+  // 5. Language Intent Detection (30+ World Languages)
   const langMappings = [
+    { keys: ['serbian', 'serbia', 'serbo-croatian', 'yugoslavian', 'yugoslav'], code: 'sr' },
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
     { keys: ['french', 'france'], code: 'fr' },
     { keys: ['spanish', 'spain', 'mexican'], code: 'es' },
     { keys: ['japanese', 'japan'], code: 'ja' },
     { keys: ['korean', 'korea'], code: 'ko' },
     { keys: ['italian', 'italy'], code: 'it' },
-    { keys: ['german', 'germany'], code: 'de' }
+    { keys: ['german', 'germany'], code: 'de' },
+    { keys: ['polish', 'poland'], code: 'pl' },
+    { keys: ['russian', 'russia'], code: 'ru' },
+    { keys: ['dutch', 'netherlands', 'holland'], code: 'nl' },
+    { keys: ['portuguese', 'brazilian', 'portugal', 'brazil'], code: 'pt' },
+    { keys: ['swedish', 'sweden'], code: 'sv' },
+    { keys: ['norwegian', 'norway'], code: 'no' },
+    { keys: ['danish', 'denmark'], code: 'da' },
+    { keys: ['finnish', 'finland'], code: 'fi' },
+    { keys: ['hindi', 'indian', 'bollywood'], code: 'hi' },
+    { keys: ['telugu'], code: 'te' },
+    { keys: ['tamil'], code: 'ta' },
+    { keys: ['turkish', 'turkey'], code: 'tr' },
+    { keys: ['chinese', 'mandarin', 'cantonese', 'hong kong', 'china'], code: 'zh' },
+    { keys: ['greek', 'greece'], code: 'el' },
+    { keys: ['hebrew', 'israeli', 'israel'], code: 'he' },
+    { keys: ['arabic', 'egyptian'], code: 'ar' },
+    { keys: ['hungarian', 'hungary'], code: 'hu' },
+    { keys: ['czech', 'czechia'], code: 'cs' },
+    { keys: ['ukrainian', 'ukraine'], code: 'uk' },
+    { keys: ['romanian', 'romania'], code: 'ro' }
   ];
 
   for (const l of langMappings) {
     if (l.keys.some(k => text.includes(k))) {
       result.langCode = l.code;
+      result.excludeUS = true;
       break;
     }
   }

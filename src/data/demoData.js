@@ -192,6 +192,59 @@ export const DEMO_CATALOG_CANDIDATES = [
     cast: ["Golshifteh Farahani", "Shahab Hosseini", "Taraneh Alidoosti"]
   },
 
+  // --- SERBIAN / BALKAN CINEMA ---
+  {
+    id: "underground-1995",
+    title: "Underground",
+    year: 1995,
+    type: "movie",
+    language: "sr",
+    country: "RS",
+    isEuropean: true,
+    genres: ["Comedy", "Drama", "War"],
+    themes: ["Palme d'Or Winner", "Yugoslav History", "Surreal Black Comedy", "Balkan Brass Band"],
+    traktRating: 8.1,
+    votes: 42000,
+    runtime: 167,
+    overview: "A group of Yugoslav black-marketeers live in a cellar for 20 years, believing WWII is still going on above.",
+    director: "Emir Kusturica",
+    cast: ["Miki Manojlović", "Lazar Ristovski", "Mirjana Joković"]
+  },
+  {
+    id: "black-cat-white-cat",
+    title: "Black Cat, White Cat (Crna mačka, beli mačor)",
+    year: 1998,
+    type: "movie",
+    language: "sr",
+    country: "RS",
+    isEuropean: true,
+    genres: ["Comedy", "Romance", "Crime"],
+    themes: ["Danube River", "Balkan Mobsters", "Romani Wedding", "Wild Black Comedy"],
+    traktRating: 7.9,
+    votes: 38000,
+    runtime: 127,
+    overview: "A small-time hustler on the Danube tries to pull off an oil smuggling deal to pay off his debts to a gangster.",
+    director: "Emir Kusturica",
+    cast: ["Bajram Severdžan", "Srđan Todorović", "Branka Katić"]
+  },
+  {
+    id: "pretty-village-pretty-flame",
+    title: "Pretty Village, Pretty Flame (Lepa sela lepo gore)",
+    year: 1996,
+    type: "movie",
+    language: "sr",
+    country: "RS",
+    isEuropean: true,
+    genres: ["Drama", "War"],
+    themes: ["Bosnian War", "Childhood Friends", "Tunnel Siege", "Serbian Classic"],
+    traktRating: 8.4,
+    votes: 29000,
+    runtime: 115,
+    overview: "Two childhood friends, a Serb and a Bosniak, end up on opposing sides during the Bosnian War, trapped inside a tunnel.",
+    director: "Srđan Dragojević",
+    cast: ["Dragan Bjelogrlić", "Nikola Pejaković", "Dragan Maksimović"]
+  },
+
   // --- FRENCH CINEMA ---
   {
     id: "amelie",
