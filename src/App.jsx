@@ -451,6 +451,9 @@ export default function App() {
       }
     } catch (err) {
       console.warn('[LLM Query Error] Falling back to local engine:', err.message);
+      const fallbackFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
+      setLlmResults(fallbackFiltered.length > 0 ? fallbackFiltered : null);
+      setFilters(activeFilters);
     } finally {
       setIsLoading(false);
     }
