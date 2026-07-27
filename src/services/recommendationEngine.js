@@ -313,7 +313,13 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     // Language Filter
     if (langCode) {
       const farsiTitles = ['A Separation', 'The Salesman', 'Children of Heaven', 'Taste of Cherry', 'About Elly'];
-      const itemLang = item.language || (farsiTitles.includes(item.title) ? 'fa' : 'en');
+      const afghaniTitles = ['Osama', 'The Kite Runner', 'Earth and Ashes (Khākestar-o-khāk)'];
+      
+      let itemLang = item.language || (farsiTitles.includes(item.title) ? 'fa' : 'en');
+      if (langCode === 'ps' && (afghaniTitles.includes(item.title) || item.country === 'AF' || item.language === 'ps' || item.language === 'fa')) {
+        itemLang = 'ps';
+      }
+
       if (itemLang !== langCode) {
         return false;
       }
@@ -505,6 +511,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
 
   // 5. Language Intent Detection (30+ World Languages)
   const langMappings = [
+    { keys: ['afghani', 'afghan', 'afghanistan', 'pashto', 'dari'], code: 'ps' },
     { keys: ['serbian', 'serbia', 'serbo-croatian', 'yugoslavian', 'yugoslav'], code: 'sr' },
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
     { keys: ['french', 'france'], code: 'fr' },

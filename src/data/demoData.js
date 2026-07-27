@@ -192,6 +192,56 @@ export const DEMO_CATALOG_CANDIDATES = [
     cast: ["Golshifteh Farahani", "Shahab Hosseini", "Taraneh Alidoosti"]
   },
 
+  // --- AFGHANI CINEMA ---
+  {
+    id: "osama-2003",
+    title: "Osama",
+    year: 2003,
+    type: "movie",
+    language: "ps",
+    country: "AF",
+    genres: ["Drama", "War"],
+    themes: ["Golden Globe Winner", "Taliban Era Kabul", "Disguised Girl", "Afghani Cinema"],
+    traktRating: 8.3,
+    votes: 35000,
+    runtime: 83,
+    overview: "Under Taliban rule, a 12-year-old Afghan girl disguises herself as a boy named Osama to work and support her family.",
+    director: "Siddiq Barmak",
+    cast: ["Marina Golbahari", "Arif Herati", "Zubaida Sahar"]
+  },
+  {
+    id: "the-kite-runner",
+    title: "The Kite Runner",
+    year: 2007,
+    type: "movie",
+    language: "fa",
+    country: "AF",
+    genres: ["Drama"],
+    themes: ["Kabul Childhood", "Kite Fighting", "Redemption", "Afghani History"],
+    traktRating: 8.2,
+    votes: 95000,
+    runtime: 128,
+    overview: "After spending years in California, Amir returns to his homeland in Afghanistan to help his old friend Hassan's son.",
+    director: "Marc Forster",
+    cast: ["Khalid Abdalla", "Homayoun Ershadi", "Zekeria Ebrahimi"]
+  },
+  {
+    id: "earth-and-ashes",
+    title: "Earth and Ashes (Khākestar-o-khāk)",
+    year: 2004,
+    type: "movie",
+    language: "ps",
+    country: "AF",
+    genres: ["Drama", "War"],
+    themes: ["Cannes Winner", "Soviet Invasion Trauma", "Grandfather & Grandson Journey"],
+    traktRating: 7.8,
+    votes: 12000,
+    runtime: 78,
+    overview: "An elderly Afghan man and his deaf grandson journey across a war-torn landscape to break tragic news to his son working in a coal mine.",
+    director: "Atiq Rahimi",
+    cast: ["Abdul Ghani", "Jawan Mard Homayoun"]
+  },
+
   // --- SERBIAN / BALKAN CINEMA ---
   {
     id: "underground-1995",

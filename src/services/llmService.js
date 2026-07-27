@@ -1,6 +1,71 @@
 // LLM Service for Google Gemini 1.5 Flash & Groq (Llama 3.1 8B)
 
 /**
+ * Uses LLM (Gemini or Groq) as an intelligent Intent Interpreter to extract ISO language codes, 
+ * country codes, media types, search terms, and negative constraints for ANY prompt (e.g. "afghani movies")
+ */
+export async function extractStructuredIntentWithLLM(promptText, llmConfig = {}) {
+  const { provider = 'gemini', geminiKey = '', groqKey = '' } = llmConfig;
+  const apiKey = provider === 'gemini' ? geminiKey : groqKey;
+
+  if (!apiKey || !apiKey.trim()) return null;
+
+  const prompt = `Analyze this movie/TV recommendation prompt: "${promptText}".
+Extract the user's intent into a JSON object with these exact keys:
+{
+  "langCode": "2-letter ISO language code (e.g. 'ps' or 'fa' for afghani/pashto/farsi, 'sr' for serbian, 'fr' for french) or null",
+  "secondaryLangCode": "secondary ISO language code if applicable or null",
+  "country": "2-letter ISO country code (e.g. 'AF' for Afghanistan, 'RS' for Serbia) or null",
+  "mediaType": "'movie' | 'show' | 'all'",
+  "genre": "primary genre string or 'all'",
+  "excludeUS": boolean,
+  "excludeBlockbusters": boolean,
+  "excludeAnimation": boolean,
+  "searchTitles": ["Array of 3-5 famous iconic movie/show titles that match this prompt (e.g. ['Osama', 'The Kite Runner', 'Earth and Ashes'] for Afghani)"]
+}`;
+
+  try {
+    if (provider === 'gemini') {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+        })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      return JSON.parse(rawText);
+    } else if (provider === 'groq') {
+      const url = 'https://api.groq.com/openai/v1/chat/completions';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey.trim()}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.1,
+          response_format: { type: 'json_object' }
+        })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || '{}';
+      return JSON.parse(content);
+    }
+  } catch (err) {
+    console.warn('[LLM Intent Extractor error]:', err.message);
+  }
+  return null;
+}
+
+/**
  * Builds a comprehensive, rich context payload of the user's watched movies, watched shows, ratings, and likes
  */
 export function buildUserHistoryContext(userHistory = {}) {
@@ -60,12 +125,12 @@ CANDIDATE CATALOG:
 ${JSON.stringify(compactCandidates)}
 
 CRITICAL INSTRUCTIONS:
-1. Indie Movie Rule: If the user asks for "indie movies", "indie films", "indie cinema", "independent films", or "not blockbusters", EXCLUDE giant mainstream studio blockbusters (e.g. Moana, Frozen, Avengers, Inception, Toy Story, Star Wars, Marvel/Disney films). Select ONLY authentic independent or low-budget indie films.
-2. Complex & Negative Constraint Rule: Strictly respect user negative constraints (e.g. "no US movies", "no Asian movies") and regional preferences (e.g. "European preferred", "intelligent gems"). If the user asks for European non-US gems, select authentic European movies (e.g. Timecrimes / Los Cronocrímenes, Aniara, El Hoyo / The Platform, Open Your Eyes / Abre los Ojos, Dark, The Bothersome Man).
-3. Watched History Query Rule: If the user asks for "movies I watched", "movies I've seen", "what have I watched", or "show my watched movies", select ONLY candidates that have \`isWatched: true\` or appear in the User Watching History.
-4. Actor/Director Rule: If the user asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY titles starring them or directed by them.
-5. Streaming Availability Rule: If the user asks for titles available for streaming or watching online, EXCLUDE unreleased upcoming theatrical titles (e.g. The Odyssey, unreleased 2026/2027 films).
-6. Exclusion Rule: If the user requests live-action / adult / no animation, exclude animated items. If specific genre or media type (movie vs TV show) is requested, strictly filter by it.
+1. Regional & Language Rule: Strictly respect user prompts asking for specific international cinema (e.g. Afghani movies, Serbian films, Iranian cinema, French movies). Select authentic films from or about that region/language.
+2. Indie Movie Rule: If the user asks for "indie movies", "indie films", "indie cinema", "independent films", or "not blockbusters", EXCLUDE giant mainstream studio blockbusters (e.g. Moana, Frozen, Avengers, Inception, Toy Story, Star Wars, Marvel/Disney films). Select ONLY authentic independent or low-budget indie films.
+3. Complex & Negative Constraint Rule: Strictly respect user negative constraints (e.g. "no US movies", "no Asian movies") and regional preferences (e.g. "European preferred", "intelligent gems"). If the user asks for European non-US gems, select authentic European movies.
+4. Watched History Query Rule: If the user asks for "movies I watched", "movies I've seen", "what have I watched", or "show my watched movies", select ONLY candidates that have \`isWatched: true\` or appear in the User Watching History.
+5. Actor/Director Rule: If the user asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY titles starring them or directed by them.
+6. Streaming Availability Rule: If the user asks for titles available for streaming or watching online, EXCLUDE unreleased upcoming theatrical titles (e.g. The Odyssey, unreleased 2026/2027 films).
 7. Reasoning: Provide custom 2-sentence film-critic reasoning taking into account the user's query and why it satisfies all user constraints.
 
 Return ONLY a valid JSON array of objects with these exact keys:
@@ -142,7 +207,7 @@ USER PROMPT: "${promptText}".
 CANDIDATES CATALOG:
 ${JSON.stringify(compactCandidates)}
 
-If user asks for "indie movies", EXCLUDE Disney/Marvel/Pixar mainstream blockbusters (Moana, Frozen, Avengers). Return ONLY valid JSON array:
+Strictly respect user query (e.g. Afghani movies, Serbian films, indie movies). Return ONLY valid JSON array:
 [
   {
     "id": "candidate-id",
@@ -190,10 +255,10 @@ export async function generateLLMRecommendations(promptText, userProfile, candid
   let llmResults = [];
 
   if (provider === 'gemini' && geminiKey && geminiKey.trim()) {
-    console.log('[LLM Engine] Querying Google Gemini 1.5 Flash with full user history & indie movie constraint context...');
+    console.log('[LLM Engine] Querying Google Gemini 1.5 Flash with full user history & regional context...');
     llmResults = await callGeminiAPI(promptText, userProfile, candidates, geminiKey, userHistory);
   } else if (provider === 'groq' && groqKey && groqKey.trim()) {
-    console.log('[LLM Engine] Querying Groq Cloud (Llama 3.1 8B) with full user history & indie movie constraint context...');
+    console.log('[LLM Engine] Querying Groq Cloud (Llama 3.1 8B) with full user history & regional context...');
     llmResults = await callGroqAPI(promptText, userProfile, candidates, groqKey, userHistory);
   } else {
     return null;

@@ -10,7 +10,7 @@ import HistoryViewer from './components/HistoryViewer';
 import { DEMO_GENRES, DEMO_USER_WATCHED, DEMO_USER_LIKES, DEMO_CATALOG_CANDIDATES } from './data/demoData';
 import { analyzeUserProfile, generateRecommendations } from './services/recommendationEngine';
 import { fetchUserWatched, fetchUserWatchlist, fetchUserCustomLists, fetchCustomListItems, fetchUserLikes, fetchGenres, fetchDeepCatalog, searchPersonFilmography, searchTraktMedia, fetchLanguageCatalog } from './services/traktApi';
-import { generateLLMRecommendations } from './services/llmService';
+import { generateLLMRecommendations, extractStructuredIntentWithLLM } from './services/llmService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('recommendations');
@@ -301,11 +301,82 @@ export default function App() {
     });
     let currentCandidates = Array.from(map.values());
 
-    // 1. Specific Language Query (e.g. Farsi 'fa', French 'fr')
-    if (parsedFilters.langCode && traktConfig.clientId) {
+    const savedLlm = localStorage.getItem('trakt_llm_config');
+    const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
+      provider: 'gemini',
+      geminiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+      groqKey: import.meta.env.VITE_GROQ_API_KEY || ''
+    };
+
+    let activeFilters = { ...parsedFilters };
+
+    // STEP 1: Ask LLM first to interpret any prompt and extract search titles + ISO language codes (e.g. "afghani movies")
+    if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
       try {
         setIsLoading(true);
-        const langItems = await fetchLanguageCatalog(parsedFilters.langCode, { clientId: traktConfig.clientId });
+        const llmIntent = await extractStructuredIntentWithLLM(promptText, llmConfig);
+        if (llmIntent) {
+          activeFilters = {
+            ...activeFilters,
+            langCode: llmIntent.langCode || activeFilters.langCode,
+            excludeUS: llmIntent.excludeUS ?? activeFilters.excludeUS,
+            excludeBlockbusters: llmIntent.excludeBlockbusters ?? activeFilters.excludeBlockbusters,
+            excludeAnimation: llmIntent.excludeAnimation ?? activeFilters.excludeAnimation,
+            genre: (llmIntent.genre && llmIntent.genre !== 'all') ? llmIntent.genre : activeFilters.genre
+          };
+
+          // If LLM provided search titles (e.g. ['Osama', 'The Kite Runner', 'Earth and Ashes']), query Trakt API for them!
+          if (traktConfig.clientId && Array.isArray(llmIntent.searchTitles) && llmIntent.searchTitles.length > 0) {
+            const fetchedListings = await Promise.all(llmIntent.searchTitles.slice(0, 4).map(async title => {
+              try {
+                return await searchTraktMedia(title, 'movie', { clientId: traktConfig.clientId });
+              } catch (e) {
+                return [];
+              }
+            }));
+            
+            const parsedLLMSearchItems = [];
+            fetchedListings.flat().forEach(item => {
+              const m = item.movie || item;
+              if (m && m.title) {
+                parsedLLMSearchItems.push({
+                  id: m.ids?.slug || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
+                  title: m.title,
+                  year: m.year || 2004,
+                  type: 'movie',
+                  genres: m.genres || ['Drama'],
+                  language: m.language || llmIntent.langCode || 'ps',
+                  country: llmIntent.country || 'AF',
+                  traktRating: m.rating || 8.0,
+                  overview: m.overview || '',
+                  ids: m.ids || {}
+                });
+              }
+            });
+
+            if (parsedLLMSearchItems.length > 0) {
+              const smap = new Map();
+              [...parsedLLMSearchItems, ...currentCandidates].forEach(c => {
+                const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
+                if (!smap.has(key)) smap.set(key, c);
+              });
+              currentCandidates = Array.from(smap.values());
+              setCatalogCandidates(currentCandidates);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('LLM Intent Interpretation notice:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    // 2. Specific Language Query (e.g. Farsi 'fa', French 'fr', Pashto 'ps')
+    if (activeFilters.langCode && traktConfig.clientId) {
+      try {
+        setIsLoading(true);
+        const langItems = await fetchLanguageCatalog(activeFilters.langCode, { clientId: traktConfig.clientId });
         if (langItems && langItems.length > 0) {
           const lmap = new Map();
           [...langItems, ...currentCandidates].forEach(c => {
@@ -322,11 +393,11 @@ export default function App() {
       }
     }
 
-    // 2. Specific Actor / Person Query (e.g. Brad Pitt)
-    else if (parsedFilters.personName && traktConfig.clientId) {
+    // 3. Specific Actor / Person Query
+    else if (activeFilters.personName && traktConfig.clientId) {
       try {
         setIsLoading(true);
-        const personFilmography = await searchPersonFilmography(parsedFilters.personName, { clientId: traktConfig.clientId });
+        const personFilmography = await searchPersonFilmography(activeFilters.personName, { clientId: traktConfig.clientId });
         if (personFilmography && personFilmography.length > 0) {
           const pmap = new Map();
           [...personFilmography, ...currentCandidates].forEach(c => {
@@ -343,87 +414,19 @@ export default function App() {
       }
     }
 
-    // 3. Live Trakt Global Server Search ONLY for specific title lookups
-    else if (traktConfig.clientId && parsedFilters.referenceTitleKey) {
-      try {
-        setIsLoading(true);
-        const searchMovies = await searchTraktMedia(promptText, 'movie', { clientId: traktConfig.clientId });
-        const searchShows = await searchTraktMedia(promptText, 'show', { clientId: traktConfig.clientId });
-        
-        const parsedLive = [];
-        if (Array.isArray(searchMovies)) {
-          searchMovies.forEach(item => {
-            const m = item.movie || item;
-            if (m.title) {
-              parsedLive.push({
-                id: m.ids?.slug || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
-                title: m.title,
-                year: m.year || 2020,
-                type: 'movie',
-                genres: m.genres || ['Drama'],
-                traktRating: m.rating || 8.0,
-                overview: m.overview || '',
-                ids: m.ids || {}
-              });
-            }
-          });
-        }
-        if (Array.isArray(searchShows)) {
-          searchShows.forEach(item => {
-            const s = item.show || item;
-            if (s.title) {
-              parsedLive.push({
-                id: s.ids?.slug || s.title.toLowerCase().replace(/[\s\-_]+/g, ''),
-                title: s.title,
-                year: s.year || 2020,
-                type: 'show',
-                genres: s.genres || ['Drama'],
-                traktRating: s.rating || 8.0,
-                overview: s.overview || '',
-                ids: s.ids || {}
-              });
-            }
-          });
-        }
-
-        if (parsedLive.length > 0) {
-          const smap = new Map();
-          [...parsedLive, ...currentCandidates].forEach(c => {
-            const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-            if (!smap.has(key)) smap.set(key, c);
-          });
-          currentCandidates = Array.from(smap.values());
-          setCatalogCandidates(currentCandidates);
-        }
-      } catch (err) {
-        console.warn('Live Trakt global server search notice:', err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     // 4. Query LLM (Google Gemini or Groq) with 2-way Pre-Filter & Post-Filter Protection
     try {
-      const savedLlm = localStorage.getItem('trakt_llm_config');
-      const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
-        provider: 'gemini',
-        geminiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
-        groqKey: import.meta.env.VITE_GROQ_API_KEY || ''
-      };
-
       if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
         setIsLoading(true);
         const userHistoryPayload = { watchedMovies, watchedShows, likedItems };
 
-        // PRE-FILTER: Strictly enforce intent constraints (blockbusters, animation, language, watched) BEFORE LLM sees candidates
-        const preFilteredCandidates = generateRecommendations(currentCandidates, userProfile, parsedFilters, watchedIdsSet);
-        const candidatePoolForLLM = (preFilteredCandidates && preFilteredCandidates.length >= 3) ? preFilteredCandidates : currentCandidates;
+        const preFilteredCandidates = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
+        const candidatePoolForLLM = (preFilteredCandidates && preFilteredCandidates.length >= 2) ? preFilteredCandidates : currentCandidates;
 
         const aiRes = await generateLLMRecommendations(promptText, userProfile, candidatePoolForLLM, llmConfig, userHistoryPayload);
 
-        // POST-FILTER: Enforce intent constraints AFTER LLM returns
         if (aiRes && aiRes.length > 0) {
-          const postFiltered = generateRecommendations(aiRes, userProfile, parsedFilters, watchedIdsSet);
+          const postFiltered = generateRecommendations(aiRes, userProfile, activeFilters, watchedIdsSet);
           setLlmResults(postFiltered.length > 0 ? postFiltered : aiRes);
         }
       }
