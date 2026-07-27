@@ -288,7 +288,6 @@ export default function App() {
       ...parsedFilters
     }));
 
-    // Prepend user watched items so the LLM and recommendation engine can select watched titles when requested
     const watchedCandidates = [
       ...watchedMovies.map(m => ({ ...m, isWatched: true })),
       ...watchedShows.map(s => ({ ...s, isWatched: true }))
@@ -344,8 +343,8 @@ export default function App() {
       }
     }
 
-    // 3. Live Trakt Global Server Search across ALL movies & TV shows of all time
-    else if (traktConfig.clientId && !parsedFilters.isWatchedQuery) {
+    // 3. Live Trakt Global Server Search ONLY for specific title lookups (SKIP for generic intent queries)
+    else if (traktConfig.clientId && parsedFilters.referenceTitleKey) {
       try {
         setIsLoading(true);
         const searchMovies = await searchTraktMedia(promptText, 'movie', { clientId: traktConfig.clientId });
