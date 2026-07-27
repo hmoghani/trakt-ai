@@ -167,7 +167,7 @@ function generateStructuredReasoning(item, userProfile, filters, referenceMatch,
     const matchedGenres = (item.genres || []).filter(g => (userProfile.topGenres || []).includes(g));
     if (matchedGenres.length > 0) {
       const topG = matchedGenres[0];
-      const pct = userProfile.genreBreakdown[topG] || 25;
+      const pct = (userProfile?.genreBreakdown?.[topG]) || 25;
       points.push(`🎯 Top Genre: Fits your #${userProfile.topGenres.indexOf(topG) + 1} genre ${topG} (${pct}% of your history)`);
     } else {
       points.push(`✨ Recommendation based on your viewing profile`);
@@ -195,28 +195,11 @@ function generateStructuredReasoning(item, userProfile, filters, referenceMatch,
  * Main recommendation function: Multi-vector semantic scoring, animation exclusion, and deduplication
  */
 export function generateRecommendations(catalogCandidates = [], userProfile, filters = {}, watchedIds = new Set()) {
-  const {
-    mediaType = 'all',
-    genre = 'all',
-    yearMode = 'all',
-    exactYear = '',
-    decade = '',
-    minYear = 1970,
-    maxYear = 2026,
-    excludeWatched = true,
-    excludeAnimation = false,
-    requireStreaming = false,
-    requireHighRating = false,
-    isWatchedQuery = false,
-    excludeUS = false,
-    excludeAsian = false,
-    preferEuropean = false,
-    preferIndieGems = false,
-    excludeBlockbusters = false,
-    personName = null,
-    langCode = null,
-    sortBy = 'matchScore',
-    referenceTitleKey = null
+  const { 
+    mediaType, genre: targetGenre, yearMode, exactYear, decade, minYear, maxYear, 
+    excludeWatched, excludeAnimation, requireStreaming, requireHighRating, 
+    isWatchedQuery, excludeUS, excludeAsian, preferEuropean, preferIndieGems, 
+    excludeBlockbusters, requireBlockbuster, personName, langCode, referenceTitleKey, sortBy = 'matchScore' 
   } = filters;
 
   const uniqueCandidatesMap = new Map();
@@ -234,7 +217,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     referenceMatch = REFERENCE_MEDIA.find(r => r.keywords.includes(referenceTitleKey.toLowerCase())) || null;
   }
 
-  const targetGenre = (genre !== 'all') ? genre : (referenceMatch ? referenceMatch.genre : 'all');
+  const effectiveGenre = (targetGenre && targetGenre !== 'all') ? targetGenre : (referenceMatch ? referenceMatch.genre : 'all');
   const shouldExcludeAnimation = excludeAnimation || (referenceMatch && referenceMatch.isLiveActionAdult);
 
   const europeanLangs = ['es', 'fr', 'de', 'sv', 'no', 'it', 'pt', 'nl', 'da', 'fi', 'pl'];
@@ -258,8 +241,15 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       return false;
     }
 
-    // Exclude mainstream studio blockbusters if user asked for indie movies / not blockbusters
-    if (excludeBlockbusters || preferIndieGems) {
+    // Blockbuster Requirement Filter vs Exclusion
+    if (requireBlockbuster) {
+      const isBlockbusterTitle = 
+        item.isBlockbuster || 
+        (item.votes && item.votes > 65000) || 
+        (item.traktRating && item.traktRating >= 8.0);
+
+      if (!isBlockbusterTitle) return false;
+    } else if (excludeBlockbusters || preferIndieGems) {
       const titleLower = item.title?.toLowerCase() || '';
       const isStudioBlockbuster = 
         item.isBlockbuster || 
@@ -355,9 +345,14 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       }
     }
 
-    // Year Filter
+    // Year Filter: For recent/current era target years (2024-2026), allow 2020-2026 releases
     if (yearMode === 'exact' && exactYear) {
-      if (item.year !== parseInt(exactYear, 10)) return false;
+      const targetYr = parseInt(exactYear, 10);
+      if (targetYr >= 2024) {
+        if (item.year < 2020 || item.year > 2026) return false;
+      } else if (item.year !== targetYr) {
+        return false;
+      }
     } else if (yearMode === 'decade' && decade) {
       const decNum = parseInt(decade, 10);
       if (item.year < decNum || item.year >= decNum + 10) return false;
@@ -487,6 +482,14 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   ) {
     result.excludeBlockbusters = true;
     result.preferIndieGems = true;
+  } else if (
+    text.includes('blockbuster') || 
+    text.includes('blockbusters') || 
+    text.includes('big budget') || 
+    text.includes('major studio') || 
+    text.includes('hollywood')
+  ) {
+    result.requireBlockbuster = true;
   } else if (text.includes('gems') || text.includes('gem') || text.includes('obscure') || text.includes('cult classic')) {
     result.preferIndieGems = true;
   }
