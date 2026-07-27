@@ -511,6 +511,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
 
   // 5. Language Intent Detection (30+ World Languages)
   const langMappings = [
+    { keys: ['pakistani', 'pakistan', 'urdu', 'punjabi', 'lollywood'], code: 'ur' },
     { keys: ['afghani', 'afghan', 'afghanistan', 'pashto', 'dari'], code: 'ps' },
     { keys: ['serbian', 'serbia', 'serbo-croatian', 'yugoslavian', 'yugoslav'], code: 'sr' },
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },

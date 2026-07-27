@@ -242,6 +242,72 @@ export const DEMO_CATALOG_CANDIDATES = [
     cast: ["Abdul Ghani", "Jawan Mard Homayoun"]
   },
 
+  // --- PAKISTANI CINEMA ---
+  {
+    id: "maula-jatt-2022",
+    title: "The Legend of Maula Jatt",
+    year: 2022,
+    type: "movie",
+    language: "ur",
+    country: "PK",
+    genres: ["Action", "Drama"],
+    themes: ["Highest Grossing Pakistani Film", "Ancient Clan Rivalry", "Epic Action Spectacle"],
+    traktRating: 8.6,
+    votes: 45000,
+    runtime: 153,
+    overview: "Prized fighter Maula Jatt faces off against Noori Natt, the brutal leader of a rival clan, in an epic tale of revenge and honor.",
+    director: "Bilal Lashari",
+    cast: ["Fawad Khan", "Hamza Ali Abbasi", "Mahira Khan"]
+  },
+  {
+    id: "joyland-2022",
+    title: "Joyland",
+    year: 2022,
+    type: "movie",
+    language: "ur",
+    country: "PK",
+    genres: ["Drama"],
+    themes: ["Cannes Jury Prize Winner", "Lahore Dance Theater", "Family Dynamics"],
+    traktRating: 8.1,
+    votes: 28000,
+    runtime: 126,
+    overview: "As the patriarchal Rana family yearns for the birth of a baby boy, the youngest son secretly joins an erotic dance theater and falls in love with a trans performer.",
+    director: "Saim Sadiq",
+    cast: ["Ali Junejo", "Rasti Farooq", "Alina Khan"]
+  },
+  {
+    id: "kamli-2022",
+    title: "Kamli",
+    year: 2022,
+    type: "movie",
+    language: "ur",
+    country: "PK",
+    genres: ["Drama", "Mystery", "Romance"],
+    themes: ["Sarmad Khoosat Masterpiece", "Rural Mystery", "Desire & Solitude"],
+    traktRating: 8.2,
+    votes: 18000,
+    runtime: 135,
+    overview: "In a quiet rural village, a lonely woman whose husband has been missing for eight years experiences a surreal awakening when a handsome photographer arrives.",
+    director: "Sarmad Khoosat",
+    cast: ["Saba Qamar", "Hamza Khawaja", "Sania Saeed"]
+  },
+  {
+    id: "na-maloom-afraad",
+    title: "Na Maloom Afraad",
+    year: 2014,
+    type: "movie",
+    language: "ur",
+    country: "PK",
+    genres: ["Comedy", "Crime"],
+    themes: ["Karachi Heist", "Get Rich Quick Scheme", "Cult Pakistani Comedy"],
+    traktRating: 7.9,
+    votes: 22000,
+    runtime: 137,
+    overview: "Three desperate men in Karachi plan a crazy heist during citywide riots to solve their financial troubles once and for all.",
+    director: "Nabeel Qureshi",
+    cast: ["Javed Sheikh", "Fahad Mustafa", "Mohsin Abbas Haider"]
+  },
+
   // --- SERBIAN / BALKAN CINEMA ---
   {
     id: "underground-1995",
