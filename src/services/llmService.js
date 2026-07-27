@@ -1,36 +1,36 @@
 // LLM Service for Google Gemini 1.5 Flash & Groq (Llama 3.1 8B)
 
 /**
- * Builds a concise, rich context payload of the user's watched movies, watched shows, ratings, and likes
+ * Builds a comprehensive, rich context payload of the user's watched movies, watched shows, ratings, and likes
  */
 export function buildUserHistoryContext(userHistory = {}) {
   const { watchedMovies = [], watchedShows = [], likedItems = [] } = userHistory;
 
-  const movieSummary = (watchedMovies || []).slice(0, 25).map(m => 
-    `${m.title}${m.year ? ` (${m.year})` : ''}${m.userRating ? ` [User Rating: ${m.userRating}/10]` : ''}`
+  const movieSummary = (watchedMovies || []).slice(0, 100).map(m => 
+    `${m.title}${m.year ? ` (${m.year})` : ''}${m.userRating ? ` [Rating: ${m.userRating}/10]` : ''}`
   ).join('; ');
 
-  const showSummary = (watchedShows || []).slice(0, 15).map(s => 
-    `${s.title}${s.year ? ` (${s.year})` : ''}${s.userRating ? ` [User Rating: ${s.userRating}/10]` : ''}`
+  const showSummary = (watchedShows || []).slice(0, 50).map(s => 
+    `${s.title}${s.year ? ` (${s.year})` : ''}${s.userRating ? ` [Rating: ${s.userRating}/10]` : ''}`
   ).join('; ');
 
-  const likesSummary = (likedItems || []).slice(0, 15).map(l => l.title).join(', ');
+  const likesSummary = (likedItems || []).slice(0, 50).map(l => l.title).join(', ');
 
-  return `USER WATCHING HISTORY & RATINGS CONTEXT:
+  return `USER WATCHING HISTORY & RATINGS CONTEXT (${watchedMovies.length} Movies, ${watchedShows.length} TV Shows):
 - Watched Movies: ${movieSummary || 'None recorded yet'}
 - Watched TV Shows: ${showSummary || 'None recorded yet'}
 - Favorited & Liked Media: ${likesSummary || 'None recorded yet'}`;
 }
 
 /**
- * Call Google Gemini 1.5 Flash API (100% Free)
+ * Call Google Gemini 1.5 Flash API (100% Free - 1M Token Context Window)
  */
 export async function callGeminiAPI(promptText, userProfile, candidates, apiKey, userHistory = {}) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
 
   const historyContext = buildUserHistoryContext(userHistory);
 
-  const compactCandidates = candidates.slice(0, 60).map(c => ({
+  const compactCandidates = candidates.slice(0, 80).map(c => ({
     id: c.id,
     title: c.title,
     year: c.year,
@@ -114,7 +114,7 @@ export async function callGroqAPI(promptText, userProfile, candidates, apiKey, u
 
   const historyContext = buildUserHistoryContext(userHistory);
 
-  const compactCandidates = candidates.slice(0, 60).map(c => ({
+  const compactCandidates = candidates.slice(0, 80).map(c => ({
     id: c.id,
     title: c.title,
     year: c.year,
