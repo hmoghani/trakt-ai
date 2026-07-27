@@ -300,10 +300,8 @@ export default function App() {
     const hasApiKey = (llmConfig.provider === 'gemini' && llmConfig.geminiKey && llmConfig.geminiKey.trim()) ||
                       (llmConfig.provider === 'groq' && llmConfig.groqKey && llmConfig.groqKey.trim());
 
-    setFilters(prev => ({
-      ...prev,
-      ...parsedFilters
-    }));
+    setIsLoading(true);
+    setErrorMsg(null);
 
     const watchedCandidates = [
       ...watchedMovies.map(m => ({ ...m, isWatched: true })),
@@ -320,11 +318,13 @@ export default function App() {
 
     let activeFilters = { ...parsedFilters };
 
-    // If no LLM key configured, apply high-accuracy local filter immediately
+    // If no LLM key configured, apply local filter
     if (!hasApiKey) {
       const localFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
       setLlmResults(localFiltered.length > 0 ? localFiltered : null);
+      setFilters(activeFilters);
       setErrorMsg('💡 Pro-Tip: Add a 100% Free Google Gemini or Groq API Key in Settings to activate AI Film Critic reasoning!');
+      setIsLoading(false);
       return;
     }
 
@@ -447,6 +447,7 @@ export default function App() {
           const postFiltered = generateRecommendations(aiRes, userProfile, activeFilters, watchedIdsSet);
           setLlmResults(postFiltered.length > 0 ? postFiltered : aiRes);
         }
+        setFilters(activeFilters);
       }
     } catch (err) {
       console.warn('[LLM Query Error] Falling back to local engine:', err.message);
