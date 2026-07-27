@@ -343,7 +343,7 @@ export default function App() {
       }
     }
 
-    // 3. Live Trakt Global Server Search ONLY for specific title lookups (SKIP for generic intent queries)
+    // 3. Live Trakt Global Server Search ONLY for specific title lookups
     else if (traktConfig.clientId && parsedFilters.referenceTitleKey) {
       try {
         setIsLoading(true);
@@ -402,7 +402,7 @@ export default function App() {
       }
     }
 
-    // 4. Query LLM (Google Gemini or Groq) with full watching history, ratings, and likes context
+    // 4. Query LLM (Google Gemini or Groq) with 2-way Pre-Filter & Post-Filter Protection
     try {
       const savedLlm = localStorage.getItem('trakt_llm_config');
       const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
@@ -414,9 +414,17 @@ export default function App() {
       if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
         setIsLoading(true);
         const userHistoryPayload = { watchedMovies, watchedShows, likedItems };
-        const aiRes = await generateLLMRecommendations(promptText, userProfile, currentCandidates, llmConfig, userHistoryPayload);
+
+        // PRE-FILTER: Strictly enforce intent constraints (blockbusters, animation, language, watched) BEFORE LLM sees candidates
+        const preFilteredCandidates = generateRecommendations(currentCandidates, userProfile, parsedFilters, watchedIdsSet);
+        const candidatePoolForLLM = (preFilteredCandidates && preFilteredCandidates.length >= 3) ? preFilteredCandidates : currentCandidates;
+
+        const aiRes = await generateLLMRecommendations(promptText, userProfile, candidatePoolForLLM, llmConfig, userHistoryPayload);
+
+        // POST-FILTER: Enforce intent constraints AFTER LLM returns
         if (aiRes && aiRes.length > 0) {
-          setLlmResults(aiRes);
+          const postFiltered = generateRecommendations(aiRes, userProfile, parsedFilters, watchedIdsSet);
+          setLlmResults(postFiltered.length > 0 ? postFiltered : aiRes);
         }
       }
     } catch (err) {
