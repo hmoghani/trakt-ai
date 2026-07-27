@@ -300,13 +300,6 @@ export default function App() {
     const hasApiKey = (llmConfig.provider === 'gemini' && llmConfig.geminiKey && llmConfig.geminiKey.trim()) ||
                       (llmConfig.provider === 'groq' && llmConfig.groqKey && llmConfig.groqKey.trim());
 
-    // STRICT REQUIREMENT: User MUST provide Gemini or Groq API Key for AI Recommender
-    if (!hasApiKey) {
-      setErrorMsg('🔑 AI LLM API Key Required: Please enter your free Google Gemini or Groq API key in Settings to activate AI media recommendations.');
-      setIsSettingsOpen(true);
-      return;
-    }
-
     setFilters(prev => ({
       ...prev,
       ...parsedFilters
@@ -326,6 +319,14 @@ export default function App() {
     let currentCandidates = Array.from(map.values());
 
     let activeFilters = { ...parsedFilters };
+
+    // If no LLM key configured, apply high-accuracy local filter immediately
+    if (!hasApiKey) {
+      const localFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
+      setLlmResults(localFiltered.length > 0 ? localFiltered : null);
+      setErrorMsg('💡 Pro-Tip: Add a 100% Free Google Gemini or Groq API Key in Settings to activate AI Film Critic reasoning!');
+      return;
+    }
 
     // STEP 1: Ask LLM first to interpret any prompt and extract search titles + ISO language codes (e.g. "afghani movies")
     if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
