@@ -200,6 +200,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     maxYear = 2026,
     excludeWatched = true,
     excludeAnimation = false,
+    requireStreaming = false,
     personName = null,
     langCode = null,
     sortBy = 'matchScore',
@@ -232,6 +233,22 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 
     if (mediaType !== 'all' && item.type !== mediaType) {
       return false;
+    }
+
+    // Streaming Availability Filter (Exclude unreleased / theatrical-only / upcoming titles like The Odyssey)
+    if (requireStreaming) {
+      const titleLower = item.title?.toLowerCase() || '';
+      const isUnreleasedOrTheatricalOnly = 
+        item.isStreaming === false || 
+        item.status === 'in_production' || 
+        item.status === 'unreleased' || 
+        item.status === 'theatrical_only' || 
+        titleLower.includes('odyssey') ||
+        titleLower.includes('the odyssey');
+
+      if (isUnreleasedOrTheatricalOnly) {
+        return false;
+      }
     }
 
     // Language Filter
@@ -342,7 +359,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Audience, Actor/Person, Language & Animation Exclusion Detection
+ * Natural language agent parser with Audience, Actor/Person, Language, Streaming & Animation Exclusion Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -354,12 +371,19 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     decade: '',
     excludeWatched: true,
     excludeAnimation: false,
+    requireStreaming: false,
     personName: null,
     langCode: null,
     referenceTitleKey: null
   };
 
-  // 1. Language Intent Detection
+  // 1. Streaming Availability Intent
+  const streamingKeywords = ['streaming', 'stream', 'available for streaming', 'watch online', 'available to watch', 'on streaming', 'on netflix', 'on hbo', 'on prime', 'at home'];
+  if (streamingKeywords.some(kw => text.includes(kw))) {
+    result.requireStreaming = true;
+  }
+
+  // 2. Language Intent Detection
   const langMappings = [
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
     { keys: ['french', 'france'], code: 'fr' },
@@ -377,20 +401,20 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 2. Media type intent
+  // 3. Media type intent
   if (text.includes('movie') || text.includes('film')) {
     result.mediaType = 'movie';
   } else if (text.includes('tv') || text.includes('show') || text.includes('series')) {
     result.mediaType = 'show';
   }
 
-  // 3. Audience / Adult Intent & Animation Exclusion
+  // 4. Audience / Adult Intent & Animation Exclusion
   const adultKeywords = ['adult', 'adults', 'mature', 'r-rated', 'r rated', 'live action', 'live-action', 'no animation', 'not animated', 'no cartoons', 'non animated'];
   if (adultKeywords.some(kw => text.includes(kw))) {
     result.excludeAnimation = true;
   }
 
-  // 4. Actor / Person Intent Detection
+  // 5. Actor / Person Intent Detection
   const knownPeople = [
     { keys: ['brad pit', 'brad pitt'], name: 'Brad Pitt' },
     { keys: ['leonardo dicaprio', 'dicaprio'], name: 'Leonardo DiCaprio' },
@@ -413,7 +437,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 5. Decade / Era intent
+  // 6. Decade / Era intent
   if (text.includes('90s') || text.includes('1990s') || text.includes('nineties')) {
     result.yearMode = 'decade';
     result.decade = '1990';
@@ -431,14 +455,14 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.decade = '2000';
   }
 
-  // 6. Exact year regex
+  // 7. Exact year regex
   const yearMatch = text.match(/\b(19\d\d|20\d\d)\b/);
   if (yearMatch && !result.decade) {
     result.yearMode = 'exact';
     result.exactYear = yearMatch[1];
   }
 
-  // 7. Reference Movie/Show Detection
+  // 8. Reference Movie/Show Detection
   for (const ref of REFERENCE_MEDIA) {
     if (ref.keywords.some(kw => text.includes(kw))) {
       result.referenceTitleKey = ref.keywords[0];
@@ -450,7 +474,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 8. Genre Keywords if no reference match
+  // 9. Genre Keywords if no reference match
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];

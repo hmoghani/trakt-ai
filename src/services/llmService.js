@@ -28,6 +28,7 @@ ${JSON.stringify(compactCandidates)}
 
 Task: Select the top 10 best matching candidates for the user query and profile.
 Actor/Director Match Rule: If the user explicitly asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY movies starring that actor or directed by that director.
+Streaming Availability Rule: If the user asks for movies available for streaming, watch online, or on streaming platforms, EXCLUDE unreleased upcoming theatrical movies (e.g. The Odyssey, unreleased 2026/2027 films).
 Exclusion Rule: If the user requests live-action / adult / no animation, exclude animated items. If specific genre/media type is requested, strictly filter by it.
 
 Return ONLY a valid JSON array of objects with these exact keys:
@@ -95,7 +96,7 @@ User Query: "${promptText}".
 Catalog:
 ${JSON.stringify(compactCandidates)}
 
-Select the top 10 best matching items. If an actor/director is requested, select ONLY titles starring them. Return ONLY valid JSON array:
+Select the top 10 best matching items. If streaming is requested, EXCLUDE unreleased upcoming theatrical movies (e.g. The Odyssey). Return ONLY valid JSON array:
 [
   {
     "id": "candidate-id",
