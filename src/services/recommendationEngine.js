@@ -209,6 +209,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     excludeAsian = false,
     preferEuropean = false,
     preferIndieGems = false,
+    excludeBlockbusters = false,
     personName = null,
     langCode = null,
     sortBy = 'matchScore',
@@ -249,10 +250,16 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       return false;
     }
 
+    // Exclude mainstream blockbusters if explicitly requested ("not the big blockbusters")
+    if (excludeBlockbusters) {
+      const isHighProfileBlockbuster = item.isBlockbuster || (item.votes && item.votes > 90000);
+      if (isHighProfileBlockbuster) return false;
+    }
+
     // Negative constraints: No US / No American
     if (excludeUS) {
       const isUS = item.country === 'US' || (!item.language && !item.country && !item.isEuropean);
-      if (isUS && item.language === 'en') return false;
+      if (isUS && item.language === 'en' && !item.isEuropean) return false;
     }
 
     // Negative constraints: No Asian
@@ -403,7 +410,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Complex Negative Constraints, European Cinema & Hidden Gem Detection
+ * Natural language agent parser with Complex Negative Constraints, European Cinema & Blockbuster Exclusion Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -421,12 +428,13 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     excludeAsian: false,
     preferEuropean: false,
     preferIndieGems: false,
+    excludeBlockbusters: false,
     personName: null,
     langCode: null,
     referenceTitleKey: null
   };
 
-  // Negative & Regional Constraints
+  // Negative & Blockbuster Exclusion Detection
   if (text.includes('no us') || text.includes('no american') || text.includes('non us') || text.includes('non-us')) {
     result.excludeUS = true;
   }
@@ -436,7 +444,10 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   if (text.includes('european') || text.includes('europe')) {
     result.preferEuropean = true;
   }
-  if (text.includes('gems') || text.includes('gem') || text.includes('indie') || text.includes('obscure') || text.includes('not the big blockbusters') || text.includes('not blockbusters')) {
+  if (text.includes('not blockbusters') || text.includes('not the big blockbusters') || text.includes('no blockbusters') || text.includes('not mainstream')) {
+    result.excludeBlockbusters = true;
+    result.preferIndieGems = true;
+  } else if (text.includes('gems') || text.includes('gem') || text.includes('indie') || text.includes('obscure')) {
     result.preferIndieGems = true;
   }
 

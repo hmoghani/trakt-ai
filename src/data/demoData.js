@@ -748,6 +748,61 @@ export const DEMO_CATALOG_CANDIDATES = [
     overview: "Forty-year-old Andreas arrives in a strange city with no memory of how he got there. He is presented with a job, an apartment, and even a wife, but soon notices something is fundamentally wrong.",
     director: "Jens Lien",
     cast: ["Trond Fausa", "Petronella Barker", "Per Schaaning"]
+  },
+  {
+    id: "ex-machina",
+    title: "Ex Machina",
+    year: 2014,
+    type: "movie",
+    language: "en",
+    country: "GB",
+    isEuropean: true,
+    isBlockbuster: true,
+    genres: ["Science Fiction", "Mystery", "Thriller"],
+    themes: ["Artificial Intelligence", "Android Consciousness", "Turing Test"],
+    traktRating: 8.1,
+    votes: 185000,
+    runtime: 108,
+    overview: "A young programmer is selected to participate in a ground-breaking experiment in synthetic intelligence by evaluating the human qualities of a highly advanced humanoid A.I.",
+    director: "Alex Garland",
+    cast: ["Domhnall Gleeson", "Alicia Vikander", "Oscar Isaac"]
+  },
+  {
+    id: "run-lola-run",
+    title: "Run Lola Run (Lola rennt)",
+    year: 1998,
+    type: "movie",
+    language: "de",
+    country: "DE",
+    isEuropean: true,
+    isBlockbuster: true,
+    genres: ["Thriller", "Action", "Science Fiction"],
+    themes: ["Butterfly Effect", "Real-Time Thriller", "German Cult Classic"],
+    traktRating: 7.8,
+    votes: 95000,
+    runtime: 81,
+    overview: "After a botched money delivery, Lola has 20 minutes to come up with 100,000 Deutschmarks to save her boyfriend's life.",
+    director: "Tom Tykwer",
+    cast: ["Franka Potente", "Moritz Bleibtreu", "Herbert Knaup"]
+  },
+  {
+    id: "high-life",
+    title: "High Life",
+    year: 2018,
+    type: "movie",
+    language: "en",
+    country: "FR",
+    isEuropean: true,
+    isBlockbuster: true,
+    genres: ["Science Fiction", "Mystery", "Drama"],
+    themes: ["Deep Space Isolation", "Black Hole Experiment", "French Sci-Fi"],
+    traktRating: 7.1,
+    votes: 62000,
+    runtime: 113,
+    overview: "A father and his daughter struggle to survive in deep space where they live in isolation aboard a research vessel.",
+    director: "Claire Denis",
+    cast: ["Robert Pattinson", "Juliette Binoche", "André Benjamin"]
   }
 ];
+
 
