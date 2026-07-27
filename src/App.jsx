@@ -272,7 +272,7 @@ export default function App() {
     return set;
   }, [watchedMovies, watchedShows]);
 
-  // Compute Recommendations (LLM override if present, else fallback to rule engine)
+  // Compute Recommendations (100% LLM override if present, else fallback to local rule engine)
   const recommendations = useMemo(() => {
     if (llmResults && Array.isArray(llmResults) && llmResults.length > 0) {
       return llmResults;
@@ -391,7 +391,7 @@ export default function App() {
       }
     }
 
-    // 4. Query Gemini LLM with expanded candidate pool
+    // 4. Query LLM (Google Gemini or Groq) with full watching history, ratings, and likes context
     try {
       const savedLlm = localStorage.getItem('trakt_llm_config');
       const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
@@ -402,7 +402,8 @@ export default function App() {
 
       if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
         setIsLoading(true);
-        const aiRes = await generateLLMRecommendations(promptText, userProfile, currentCandidates, llmConfig);
+        const userHistoryPayload = { watchedMovies, watchedShows, likedItems };
+        const aiRes = await generateLLMRecommendations(promptText, userProfile, currentCandidates, llmConfig, userHistoryPayload);
         if (aiRes && aiRes.length > 0) {
           setLlmResults(aiRes);
         }
