@@ -6,7 +6,7 @@
 export function buildUserHistoryContext(userHistory = {}) {
   const { watchedMovies = [], watchedShows = [], likedItems = [] } = userHistory;
 
-  const movieSummary = (watchedMovies || []).slice(0, 20).map(m => 
+  const movieSummary = (watchedMovies || []).slice(0, 25).map(m => 
     `${m.title}${m.year ? ` (${m.year})` : ''}${m.userRating ? ` [User Rating: ${m.userRating}/10]` : ''}`
   ).join('; ');
 
@@ -28,20 +28,22 @@ export function buildUserHistoryContext(userHistory = {}) {
 export async function callGeminiAPI(promptText, userProfile, candidates, apiKey, userHistory = {}) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
 
-  const compactCandidates = candidates.slice(0, 45).map(c => ({
+  const historyContext = buildUserHistoryContext(userHistory);
+
+  const compactCandidates = candidates.slice(0, 50).map(c => ({
     id: c.id,
     title: c.title,
     year: c.year,
     type: c.type,
     genres: c.genres,
+    isWatched: !!c.isWatched,
+    userRating: c.userRating || null,
     themes: c.themes || [],
     cast: c.cast || [],
     director: c.director || '',
     traktRating: c.traktRating || 8.0,
     overview: c.overview?.substring(0, 150)
   }));
-
-  const historyContext = buildUserHistoryContext(userHistory);
 
   const systemInstruction = `You are an elite film critic and recommendation AI.
 ${historyContext}
@@ -53,11 +55,11 @@ CANDIDATE CATALOG:
 ${JSON.stringify(compactCandidates)}
 
 CRITICAL INSTRUCTIONS:
-1. You have 100% full authority to select the top 10 best matching candidates for the user query and viewing history.
+1. Watched History Query Rule: If the user asks for "movies I watched", "movies I've seen", "what have I watched", or "show my watched movies", select ONLY candidates that have \`isWatched: true\` or appear in the User Watching History.
 2. Actor/Director Rule: If the user asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY titles starring them or directed by them.
 3. Streaming Availability Rule: If the user asks for titles available for streaming or watching online, EXCLUDE unreleased upcoming theatrical titles (e.g. The Odyssey, unreleased 2026/2027 films).
 4. Exclusion Rule: If the user requests live-action / adult / no animation, exclude animated items. If specific genre or media type (movie vs TV show) is requested, strictly filter by it.
-5. Reasoning: Provide custom, film-critic reasoning taking into account the user's query and their watching history/ratings.
+5. Reasoning: Provide custom 2-sentence film-critic reasoning taking into account the user's query and their watching history/ratings.
 
 Return ONLY a valid JSON array of objects with these exact keys:
 [
@@ -105,19 +107,21 @@ Return ONLY a valid JSON array of objects with these exact keys:
 export async function callGroqAPI(promptText, userProfile, candidates, apiKey, userHistory = {}) {
   const url = 'https://api.groq.com/openai/v1/chat/completions';
 
-  const compactCandidates = candidates.slice(0, 45).map(c => ({
+  const historyContext = buildUserHistoryContext(userHistory);
+
+  const compactCandidates = candidates.slice(0, 50).map(c => ({
     id: c.id,
     title: c.title,
     year: c.year,
     type: c.type,
     genres: c.genres,
+    isWatched: !!c.isWatched,
+    userRating: c.userRating || null,
     themes: c.themes || [],
     cast: c.cast || [],
     director: c.director || '',
     traktRating: c.traktRating || 8.0
   }));
-
-  const historyContext = buildUserHistoryContext(userHistory);
 
   const prompt = `You are an elite film critic AI.
 ${historyContext}
@@ -128,7 +132,7 @@ USER PROMPT: "${promptText}".
 CANDIDATES CATALOG:
 ${JSON.stringify(compactCandidates)}
 
-Select the top 10 best matching items for the user query and history. If streaming is requested, EXCLUDE unreleased upcoming theatrical movies (e.g. The Odyssey). If an actor/director is requested, select ONLY titles starring them. Return ONLY valid JSON array:
+If user asks for "movies I watched" or "what have I watched", select ONLY candidates with \`isWatched: true\`. Return ONLY valid JSON array:
 [
   {
     "id": "candidate-id",

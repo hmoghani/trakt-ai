@@ -144,8 +144,9 @@ const REFERENCE_MEDIA = [
 function generateStructuredReasoning(item, userProfile, filters, referenceMatch, matchScore) {
   const points = [];
 
-  // Point 1: Language, Reference Title or Actor Match
-  if (filters.langCode) {
+  if (filters.isWatchedQuery || item.isWatched) {
+    points.push(`👁️ From Your Watched History (User Rating: ${item.userRating ? item.userRating + '/10' : 'Watched'})`);
+  } else if (filters.langCode) {
     const langNames = { fa: 'Persian/Farsi', fr: 'French', es: 'Spanish', ja: 'Japanese', ko: 'Korean', it: 'Italian', de: 'German' };
     const langName = langNames[filters.langCode] || filters.langCode.toUpperCase();
     points.push(`🌐 Foreign Cinema: Authentic ${langName} title (${item.title})`);
@@ -201,6 +202,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     excludeWatched = true,
     excludeAnimation = false,
     requireStreaming = false,
+    isWatchedQuery = false,
     personName = null,
     langCode = null,
     sortBy = 'matchScore',
@@ -227,7 +229,12 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 
   // 1. Strict Candidate Filter
   const filtered = candidatesList.filter(item => {
-    if (excludeWatched && watchedIds.has(item.id)) {
+    const isItemWatched = watchedIds.has(item.id) || item.isWatched;
+
+    // If user specifically asked for "movies that I watched", ONLY include watched titles!
+    if (isWatchedQuery) {
+      if (!isItemWatched) return false;
+    } else if (excludeWatched && isItemWatched) {
       return false;
     }
 
@@ -235,7 +242,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       return false;
     }
 
-    // Streaming Availability Filter (Exclude unreleased / theatrical-only / upcoming titles like The Odyssey)
+    // Streaming Availability Filter
     if (requireStreaming) {
       const titleLower = item.title?.toLowerCase() || '';
       const isUnreleasedOrTheatricalOnly = 
@@ -278,7 +285,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       }
     }
 
-    // Strict Genre Exclusion: Candidate MUST contain target genre (or secondary reference genre)
+    // Strict Genre Exclusion: Candidate MUST contain target genre
     if (targetGenre !== 'all') {
       const targetNorm = normalizeGenre(targetGenre);
       const itemGenresNorm = (item.genres || []).map(g => normalizeGenre(g));
@@ -306,6 +313,10 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   // 2. Multi-Vector Scoring
   const scored = filtered.map(item => {
     let score = 0;
+
+    if (isWatchedQuery || item.isWatched) {
+      score += 50;
+    }
 
     if (langCode && (item.language === langCode || langCode === 'fa')) {
       score += 45;
@@ -338,7 +349,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       max: yearMode === 'range' ? maxYear : null
     };
 
-    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
+    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, isWatchedQuery, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
 
     return {
       ...item,
@@ -359,7 +370,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Audience, Actor/Person, Language, Streaming & Animation Exclusion Detection
+ * Natural language agent parser with Audience, Actor/Person, Language, Watched Query, Streaming & Animation Exclusion Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -372,10 +383,23 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     excludeWatched: true,
     excludeAnimation: false,
     requireStreaming: false,
+    isWatchedQuery: false,
     personName: null,
     langCode: null,
     referenceTitleKey: null
   };
+
+  // 0. Watched Query Intent Detection
+  const watchedQueryKeywords = [
+    'movies that i watched', 'movies i watched', 'movies i have watched', "movies i've watched",
+    'movies i seen', "movies i've seen", 'what have i watched', 'my watched movies',
+    'shows i watched', "shows i've watched", 'what i watched', 'what i have watched',
+    'titles i watched', 'what movies have i watched', 'what shows have i watched'
+  ];
+  if (watchedQueryKeywords.some(kw => text.includes(kw))) {
+    result.isWatchedQuery = true;
+    result.excludeWatched = false; // Do not exclude watched items!
+  }
 
   // 1. Streaming Availability Intent
   const streamingKeywords = ['streaming', 'stream', 'available for streaming', 'watch online', 'available to watch', 'on streaming', 'on netflix', 'on hbo', 'on prime', 'at home'];

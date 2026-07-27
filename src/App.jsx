@@ -272,7 +272,7 @@ export default function App() {
     return set;
   }, [watchedMovies, watchedShows]);
 
-  // Compute Recommendations (100% LLM override if present, else fallback to local rule engine)
+  // Compute Recommendations
   const recommendations = useMemo(() => {
     if (llmResults && Array.isArray(llmResults) && llmResults.length > 0) {
       return llmResults;
@@ -288,7 +288,19 @@ export default function App() {
       ...parsedFilters
     }));
 
-    let currentCandidates = [...catalogCandidates];
+    // Prepend user watched items so the LLM and recommendation engine can select watched titles when requested
+    const watchedCandidates = [
+      ...watchedMovies.map(m => ({ ...m, isWatched: true })),
+      ...watchedShows.map(s => ({ ...s, isWatched: true }))
+    ];
+
+    const map = new Map();
+    [...watchedCandidates, ...catalogCandidates].forEach(c => {
+      if (!c || !c.title) return;
+      const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
+      if (!map.has(key)) map.set(key, c);
+    });
+    let currentCandidates = Array.from(map.values());
 
     // 1. Specific Language Query (e.g. Farsi 'fa', French 'fr')
     if (parsedFilters.langCode && traktConfig.clientId) {
@@ -296,12 +308,12 @@ export default function App() {
         setIsLoading(true);
         const langItems = await fetchLanguageCatalog(parsedFilters.langCode, { clientId: traktConfig.clientId });
         if (langItems && langItems.length > 0) {
-          const map = new Map();
+          const lmap = new Map();
           [...langItems, ...currentCandidates].forEach(c => {
             const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-            if (!map.has(key)) map.set(key, c);
+            if (!lmap.has(key)) lmap.set(key, c);
           });
-          currentCandidates = Array.from(map.values());
+          currentCandidates = Array.from(lmap.values());
           setCatalogCandidates(currentCandidates);
         }
       } catch (err) {
@@ -317,12 +329,12 @@ export default function App() {
         setIsLoading(true);
         const personFilmography = await searchPersonFilmography(parsedFilters.personName, { clientId: traktConfig.clientId });
         if (personFilmography && personFilmography.length > 0) {
-          const map = new Map();
+          const pmap = new Map();
           [...personFilmography, ...currentCandidates].forEach(c => {
             const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-            if (!map.has(key)) map.set(key, c);
+            if (!pmap.has(key)) pmap.set(key, c);
           });
-          currentCandidates = Array.from(map.values());
+          currentCandidates = Array.from(pmap.values());
           setCatalogCandidates(currentCandidates);
         }
       } catch (err) {
@@ -333,7 +345,7 @@ export default function App() {
     }
 
     // 3. Live Trakt Global Server Search across ALL movies & TV shows of all time
-    else if (traktConfig.clientId) {
+    else if (traktConfig.clientId && !parsedFilters.isWatchedQuery) {
       try {
         setIsLoading(true);
         const searchMovies = await searchTraktMedia(promptText, 'movie', { clientId: traktConfig.clientId });
@@ -376,12 +388,12 @@ export default function App() {
         }
 
         if (parsedLive.length > 0) {
-          const map = new Map();
+          const smap = new Map();
           [...parsedLive, ...currentCandidates].forEach(c => {
             const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-            if (!map.has(key)) map.set(key, c);
+            if (!smap.has(key)) smap.set(key, c);
           });
-          currentCandidates = Array.from(map.values());
+          currentCandidates = Array.from(smap.values());
           setCatalogCandidates(currentCandidates);
         }
       } catch (err) {
