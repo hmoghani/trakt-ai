@@ -817,18 +817,38 @@ export const DEMO_CATALOG_CANDIDATES = [
 
   // --- LEONARDO DICAPRIO ---
   {
+    id: "interstellar",
+    title: "Interstellar",
+    year: 2014,
+    type: "movie",
+    language: "en",
+    country: "US",
+    isBlockbuster: true,
+    genres: ["Science Fiction", "Drama", "Adventure"],
+    themes: ["Wormhole Travel", "Father-Daughter Bond", "Black Hole Gargantua", "Sci-Fi Masterpiece"],
+    traktRating: 8.9,
+    votes: 310000,
+    runtime: 169,
+    overview: "When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Joseph Cooper, is tasked to pilot a spacecraft, along with a team of researchers, to find a new planet for humans.",
+    director: "Christopher Nolan",
+    cast: ["Matthew McConaughey", "Anne Hathaway", "Jessica Chastain"]
+  },
+  {
     id: "inception",
     title: "Inception",
     year: 2010,
     type: "movie",
+    language: "en",
+    country: "US",
+    isBlockbuster: true,
     genres: ["Science Fiction", "Action", "Adventure"],
-    themes: ["Dream Manipulation", "Heist", "Subconscious", "Mind-Bending"],
+    themes: ["Dream Inception", "Subconscious Heist", "Mind-Bending Action"],
     traktRating: 8.8,
-    votes: 210000,
+    votes: 350000,
     runtime: 148,
-    overview: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea.",
+    overview: "A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
     director: "Christopher Nolan",
-    cast: ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page", "Tom Hardy"]
+    cast: ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page"]
   },
 
   // --- TOM CRUISE ---

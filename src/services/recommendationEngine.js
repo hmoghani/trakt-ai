@@ -490,6 +490,9 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     text.includes('hollywood')
   ) {
     result.requireBlockbuster = true;
+    if (result.mediaType === 'all') {
+      result.mediaType = 'movie';
+    }
   } else if (text.includes('gems') || text.includes('gem') || text.includes('obscure') || text.includes('cult classic')) {
     result.preferIndieGems = true;
   }
