@@ -287,8 +287,10 @@ export default function App() {
       return;
     }
 
-    setLlmResults(null);
+    // 1. ALWAYS CLEAR STALE RESULTS AND ERRORS ON NEW PROMPT
+    setLlmResults([]);
     setErrorMsg(null);
+    setIsLoading(true);
 
     const savedLlm = localStorage.getItem('trakt_llm_config');
     const llmConfig = savedLlm ? JSON.parse(savedLlm) : {
@@ -300,8 +302,33 @@ export default function App() {
     const hasApiKey = (llmConfig.provider === 'gemini' && llmConfig.geminiKey && llmConfig.geminiKey.trim()) ||
                       (llmConfig.provider === 'groq' && llmConfig.groqKey && llmConfig.groqKey.trim());
 
-    setIsLoading(true);
-    setErrorMsg(null);
+    // Clean baseline default filters merged ONLY with fresh prompt filters
+    const baselineFilters = {
+      mediaType: 'all',
+      genre: 'all',
+      yearMode: 'all',
+      exactYear: '',
+      decade: '',
+      minYear: 1970,
+      maxYear: 2026,
+      excludeWatched: true,
+      excludeAnimation: false,
+      requireStreaming: false,
+      requireHighRating: false,
+      isWatchedQuery: false,
+      excludeUS: false,
+      excludeAsian: false,
+      preferEuropean: false,
+      preferIndieGems: false,
+      excludeBlockbusters: false,
+      requireBlockbuster: false,
+      personName: null,
+      langCode: null,
+      referenceTitleKey: null,
+      sortBy: 'matchScore'
+    };
+
+    let activeFilters = { ...baselineFilters, ...parsedFilters };
 
     const watchedCandidates = [
       ...watchedMovies.map(m => ({ ...m, isWatched: true })),
@@ -316,144 +343,45 @@ export default function App() {
     });
     let currentCandidates = Array.from(map.values());
 
-    let activeFilters = { ...parsedFilters };
-
-    // If no LLM key configured, apply local filter
+    // If no LLM key configured, show explicit setup alert and local clean recommendations
     if (!hasApiKey) {
       const localFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
-      setLlmResults(localFiltered.length > 0 ? localFiltered : null);
+      setLlmResults(localFiltered);
       setFilters(activeFilters);
-      setErrorMsg('💡 Pro-Tip: Add a 100% Free Google Gemini or Groq API Key in Settings to activate AI Film Critic reasoning!');
+      setErrorMsg('💡 AI API Key Notice: Add a free Google Gemini or Groq API Key in Settings for AI reasoning.');
       setIsLoading(false);
       return;
     }
 
-    // STEP 1: Ask LLM first to interpret any prompt and extract search titles + ISO language codes (e.g. "afghani movies")
-    if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
-      try {
-        setIsLoading(true);
-        const llmIntent = await extractStructuredIntentWithLLM(promptText, llmConfig);
-        if (llmIntent) {
-          activeFilters = {
-            ...activeFilters,
-            langCode: llmIntent.langCode || activeFilters.langCode,
-            excludeUS: llmIntent.excludeUS ?? activeFilters.excludeUS,
-            excludeBlockbusters: llmIntent.excludeBlockbusters ?? activeFilters.excludeBlockbusters,
-            excludeAnimation: llmIntent.excludeAnimation ?? activeFilters.excludeAnimation,
-            genre: (llmIntent.genre && llmIntent.genre !== 'all') ? llmIntent.genre : activeFilters.genre
-          };
-
-          // If LLM provided search titles (e.g. ['Osama', 'The Kite Runner', 'Earth and Ashes']), query Trakt API for them!
-          if (traktConfig.clientId && Array.isArray(llmIntent.searchTitles) && llmIntent.searchTitles.length > 0) {
-            const fetchedListings = await Promise.all(llmIntent.searchTitles.slice(0, 4).map(async title => {
-              try {
-                return await searchTraktMedia(title, 'movie', { clientId: traktConfig.clientId });
-              } catch (e) {
-                return [];
-              }
-            }));
-            
-            const parsedLLMSearchItems = [];
-            fetchedListings.flat().forEach(item => {
-              const m = item.movie || item;
-              if (m && m.title) {
-                parsedLLMSearchItems.push({
-                  id: m.ids?.slug || m.title.toLowerCase().replace(/[\s\-_]+/g, ''),
-                  title: m.title,
-                  year: m.year || 2004,
-                  type: 'movie',
-                  genres: m.genres || ['Drama'],
-                  language: m.language || llmIntent.langCode || 'ps',
-                  country: llmIntent.country || 'AF',
-                  traktRating: m.rating || 8.0,
-                  overview: m.overview || '',
-                  ids: m.ids || {}
-                });
-              }
-            });
-
-            if (parsedLLMSearchItems.length > 0) {
-              const smap = new Map();
-              [...parsedLLMSearchItems, ...currentCandidates].forEach(c => {
-                const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-                if (!smap.has(key)) smap.set(key, c);
-              });
-              currentCandidates = Array.from(smap.values());
-              setCatalogCandidates(currentCandidates);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('LLM Intent Interpretation notice:', err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // 2. Specific Language Query (e.g. Farsi 'fa', French 'fr', Pashto 'ps')
-    if (activeFilters.langCode && traktConfig.clientId) {
-      try {
-        setIsLoading(true);
-        const langItems = await fetchLanguageCatalog(activeFilters.langCode, { clientId: traktConfig.clientId });
-        if (langItems && langItems.length > 0) {
-          const lmap = new Map();
-          [...langItems, ...currentCandidates].forEach(c => {
-            const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-            if (!lmap.has(key)) lmap.set(key, c);
-          });
-          currentCandidates = Array.from(lmap.values());
-          setCatalogCandidates(currentCandidates);
-        }
-      } catch (err) {
-        console.warn('Language catalog fetch notice:', err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // 3. Specific Actor / Person Query
-    else if (activeFilters.personName && traktConfig.clientId) {
-      try {
-        setIsLoading(true);
-        const personFilmography = await searchPersonFilmography(activeFilters.personName, { clientId: traktConfig.clientId });
-        if (personFilmography && personFilmography.length > 0) {
-          const pmap = new Map();
-          [...personFilmography, ...currentCandidates].forEach(c => {
-            const key = c.id || c.title.toLowerCase().replace(/[\s\-_]+/g, '');
-            if (!pmap.has(key)) pmap.set(key, c);
-          });
-          currentCandidates = Array.from(pmap.values());
-          setCatalogCandidates(currentCandidates);
-        }
-      } catch (err) {
-        console.warn('Actor filmography search notice:', err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // 4. Query LLM (Google Gemini or Groq) with 2-way Pre-Filter & Post-Filter Protection
+    // Query LLM (Google Gemini or Groq)
     try {
-      if ((llmConfig.provider === 'gemini' && llmConfig.geminiKey) || (llmConfig.provider === 'groq' && llmConfig.groqKey)) {
-        setIsLoading(true);
-        const userHistoryPayload = { watchedMovies, watchedShows, likedItems };
+      const userHistoryPayload = { watchedMovies, watchedShows, likedItems };
 
-        const preFilteredCandidates = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
-        const candidatePoolForLLM = (preFilteredCandidates && preFilteredCandidates.length >= 2) ? preFilteredCandidates : currentCandidates;
+      const preFilteredCandidates = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
+      const candidatePoolForLLM = (preFilteredCandidates && preFilteredCandidates.length >= 2) ? preFilteredCandidates : currentCandidates;
 
-        const aiRes = await generateLLMRecommendations(promptText, userProfile, candidatePoolForLLM, llmConfig, userHistoryPayload);
+      const aiRes = await generateLLMRecommendations(promptText, userProfile, candidatePoolForLLM, llmConfig, userHistoryPayload);
 
-        if (aiRes && aiRes.length > 0) {
-          const postFiltered = generateRecommendations(aiRes, userProfile, activeFilters, watchedIdsSet);
-          setLlmResults(postFiltered.length > 0 ? postFiltered : aiRes);
-        }
-        setFilters(activeFilters);
+      if (aiRes && aiRes.length > 0) {
+        const postFiltered = generateRecommendations(aiRes, userProfile, activeFilters, watchedIdsSet);
+        setLlmResults(postFiltered.length > 0 ? postFiltered : aiRes);
+      } else {
+        setLlmResults([]);
       }
-    } catch (err) {
-      console.warn('[LLM Query Error] Falling back to local engine:', err.message);
-      const fallbackFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
-      setLlmResults(fallbackFiltered.length > 0 ? fallbackFiltered : null);
       setFilters(activeFilters);
+    } catch (err) {
+      console.warn('[LLM Query Error]:', err.message);
+      setLlmResults([]);
+      setFilters(activeFilters);
+
+      const errLower = err.message.toLowerCase();
+      if (errLower.includes('429') || errLower.includes('quota') || errLower.includes('rate')) {
+        setErrorMsg('⚠️ LLM Rate Limit Exceeded (HTTP 429): Google Gemini / Groq quota reached. Please wait 30 seconds or switch providers in Settings.');
+      } else if (errLower.includes('400') || errLower.includes('invalid') || errLower.includes('key')) {
+        setErrorMsg('🔑 Invalid LLM API Key: Please update your Gemini or Groq API key in Settings.');
+      } else {
+        setErrorMsg(`⚠️ LLM Response Error: ${err.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
