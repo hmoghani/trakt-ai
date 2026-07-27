@@ -20,11 +20,99 @@ export const DEMO_GENRES = [
 ];
 
 export const DEMO_USER_WATCHED = {
-  movies: [],
-  shows: []
+  movies: [
+    {
+      id: "blade-runner-2049",
+      title: "Blade Runner 2049",
+      year: 2017,
+      type: "movie",
+      genres: ["Science Fiction", "Drama", "Mystery"],
+      userRating: 9.0,
+      traktRating: 8.5,
+      watchedAt: "2026-01-15T20:00:00.000Z",
+      plays: 2
+    },
+    {
+      id: "interstellar",
+      title: "Interstellar",
+      year: 2014,
+      type: "movie",
+      genres: ["Science Fiction", "Drama", "Adventure"],
+      userRating: 10.0,
+      traktRating: 8.7,
+      watchedAt: "2026-02-01T21:30:00.000Z",
+      plays: 3
+    },
+    {
+      id: "inception",
+      title: "Inception",
+      year: 2010,
+      type: "movie",
+      genres: ["Science Fiction", "Action", "Adventure"],
+      userRating: 9.5,
+      traktRating: 8.8,
+      watchedAt: "2026-02-10T19:00:00.000Z",
+      plays: 2
+    },
+    {
+      id: "a-separation",
+      title: "A Separation",
+      year: 2011,
+      type: "movie",
+      genres: ["Drama", "Mystery"],
+      userRating: 9.0,
+      traktRating: 8.7,
+      watchedAt: "2026-03-05T20:15:00.000Z",
+      plays: 1
+    }
+  ],
+  shows: [
+    {
+      id: "severance",
+      title: "Severance",
+      year: 2022,
+      type: "show",
+      genres: ["Science Fiction", "Drama", "Mystery"],
+      userRating: 10.0,
+      traktRating: 8.7,
+      watchedAt: "2026-03-12T22:00:00.000Z",
+      plays: 9,
+      episodesWatched: 9
+    },
+    {
+      id: "dark",
+      title: "Dark",
+      year: 2017,
+      type: "show",
+      genres: ["Science Fiction", "Mystery", "Drama"],
+      userRating: 9.5,
+      traktRating: 8.9,
+      watchedAt: "2026-03-20T21:00:00.000Z",
+      plays: 26,
+      episodesWatched: 26
+    }
+  ]
 };
 
-export const DEMO_USER_LIKES = [];
+export const DEMO_USER_LIKES = [
+  {
+    id: "blade-runner-2049",
+    title: "Blade Runner 2049",
+    year: 2017,
+    type: "movie",
+    genres: ["Science Fiction", "Drama", "Mystery"],
+    userRating: 9.0
+  },
+  {
+    id: "severance",
+    title: "Severance",
+    year: 2022,
+    type: "show",
+    genres: ["Science Fiction", "Drama", "Mystery"],
+    userRating: 10.0
+  }
+];
+
 
 export const DEMO_CATALOG_CANDIDATES = [
   // --- FARSI / PERSIAN CINEMA ---
@@ -716,6 +804,23 @@ export const DEMO_CATALOG_CANDIDATES = [
     overview: "A family saga with a supernatural twist, set in a German town where two young children disappear.",
     director: "Baran bo Odar",
     cast: ["Louis Hofmann", "Karoline Eichhorn", "Lisa Vicari"]
+  },
+  {
+    id: "1899-show",
+    title: "1899",
+    year: 2022,
+    type: "show",
+    language: "de",
+    country: "DE",
+    isEuropean: true,
+    genres: ["Mystery", "Science Fiction", "Drama"],
+    themes: ["Steamship Ocean", "Multilingual Puzzle", "Simulated Reality"],
+    traktRating: 8.2,
+    votes: 48000,
+    runtime: 50,
+    overview: "A steamship filled with European migrants travels west to leave the old continent. The passengers are united by their hopes for the new century, until they encounter a derelict ship.",
+    director: "Baran bo Odar",
+    cast: ["Emily Beecham", "Aneurin Barnard", "Andreas Pietschmann"]
   },
   {
     id: "silo",

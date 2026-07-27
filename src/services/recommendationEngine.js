@@ -609,14 +609,16 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];
+    const mysteryKeywords = ['mystery', 'whodunit', 'investigation', 'detective', 'puzzle'];
     const comedyKeywords = ['comedy', 'funny', 'hilarious', 'humor', 'sitcom', 'laugh'];
     const actionKeywords = ['action', 'fight', 'hero', 'superhero', 'explosion', 'martial arts'];
     const dramaKeywords = ['drama', 'dramatic', 'emotional', 'history', 'biography'];
-    const thrillerKeywords = ['thriller', 'suspense', 'mystery', 'crime', 'investigation', 'detective'];
+    const thrillerKeywords = ['thriller', 'suspense', 'crime'];
     const animationKeywords = ['animation', 'anime', 'animated', 'cartoon'];
 
     if (scifiKeywords.some(kw => text.includes(kw))) result.genre = 'Science Fiction';
     else if (horrorKeywords.some(kw => text.includes(kw))) result.genre = 'Horror';
+    else if (mysteryKeywords.some(kw => text.includes(kw))) result.genre = 'Mystery';
     else if (comedyKeywords.some(kw => text.includes(kw))) result.genre = 'Comedy';
     else if (actionKeywords.some(kw => text.includes(kw))) result.genre = 'Action';
     else if (thrillerKeywords.some(kw => text.includes(kw))) result.genre = 'Thriller';
