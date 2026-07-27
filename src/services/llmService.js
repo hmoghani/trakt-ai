@@ -30,11 +30,15 @@ export async function callGeminiAPI(promptText, userProfile, candidates, apiKey,
 
   const historyContext = buildUserHistoryContext(userHistory);
 
-  const compactCandidates = candidates.slice(0, 50).map(c => ({
+  const compactCandidates = candidates.slice(0, 60).map(c => ({
     id: c.id,
     title: c.title,
     year: c.year,
     type: c.type,
+    language: c.language || 'en',
+    country: c.country || (c.isEuropean ? 'EU' : 'US'),
+    isEuropean: !!c.isEuropean,
+    isIndieGem: !!c.isIndieGem,
     genres: c.genres,
     isWatched: !!c.isWatched,
     userRating: c.userRating || null,
@@ -55,11 +59,12 @@ CANDIDATE CATALOG:
 ${JSON.stringify(compactCandidates)}
 
 CRITICAL INSTRUCTIONS:
-1. Watched History Query Rule: If the user asks for "movies I watched", "movies I've seen", "what have I watched", or "show my watched movies", select ONLY candidates that have \`isWatched: true\` or appear in the User Watching History.
-2. Actor/Director Rule: If the user asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY titles starring them or directed by them.
-3. Streaming Availability Rule: If the user asks for titles available for streaming or watching online, EXCLUDE unreleased upcoming theatrical titles (e.g. The Odyssey, unreleased 2026/2027 films).
-4. Exclusion Rule: If the user requests live-action / adult / no animation, exclude animated items. If specific genre or media type (movie vs TV show) is requested, strictly filter by it.
-5. Reasoning: Provide custom 2-sentence film-critic reasoning taking into account the user's query and their watching history/ratings.
+1. Complex & Negative Constraint Rule: Strictly respect user negative constraints (e.g. "no US movies", "no Asian movies") and regional preferences (e.g. "European preferred", "intelligent gems", "not blockbusters"). If the user asks for European non-US gems, select authentic European movies (e.g. Timecrimes / Los Cronocrímenes, Aniara, El Hoyo / The Platform, Open Your Eyes / Abre los Ojos, Dark, The Bothersome Man).
+2. Watched History Query Rule: If the user asks for "movies I watched", "movies I've seen", "what have I watched", or "show my watched movies", select ONLY candidates that have \`isWatched: true\` or appear in the User Watching History.
+3. Actor/Director Rule: If the user asks for movies starring an actor (e.g. Brad Pitt, Leonardo DiCaprio) or directed by a director, select ONLY titles starring them or directed by them.
+4. Streaming Availability Rule: If the user asks for titles available for streaming or watching online, EXCLUDE unreleased upcoming theatrical titles (e.g. The Odyssey, unreleased 2026/2027 films).
+5. Exclusion Rule: If the user requests live-action / adult / no animation, exclude animated items. If specific genre or media type (movie vs TV show) is requested, strictly filter by it.
+6. Reasoning: Provide custom 2-sentence film-critic reasoning taking into account the user's query and why it satisfies all user constraints.
 
 Return ONLY a valid JSON array of objects with these exact keys:
 [
@@ -109,11 +114,13 @@ export async function callGroqAPI(promptText, userProfile, candidates, apiKey, u
 
   const historyContext = buildUserHistoryContext(userHistory);
 
-  const compactCandidates = candidates.slice(0, 50).map(c => ({
+  const compactCandidates = candidates.slice(0, 60).map(c => ({
     id: c.id,
     title: c.title,
     year: c.year,
     type: c.type,
+    language: c.language || 'en',
+    isEuropean: !!c.isEuropean,
     genres: c.genres,
     isWatched: !!c.isWatched,
     userRating: c.userRating || null,
@@ -132,12 +139,12 @@ USER PROMPT: "${promptText}".
 CANDIDATES CATALOG:
 ${JSON.stringify(compactCandidates)}
 
-If user asks for "movies I watched" or "what have I watched", select ONLY candidates with \`isWatched: true\`. Return ONLY valid JSON array:
+Strictly enforce negative constraints (e.g. "no US movies", "no Asian movies") and European indie gem preferences. Return ONLY valid JSON array:
 [
   {
     "id": "candidate-id",
     "matchScore": 95,
-    "reasoning": "Detailed 2-sentence explanation of why this fits"
+    "reasoning": "Detailed 2-sentence explanation of why this fits all user constraints"
   }
 ]`;
 
@@ -180,10 +187,10 @@ export async function generateLLMRecommendations(promptText, userProfile, candid
   let llmResults = [];
 
   if (provider === 'gemini' && geminiKey && geminiKey.trim()) {
-    console.log('[LLM Engine] Querying Google Gemini 1.5 Flash with full user history & ratings context...');
+    console.log('[LLM Engine] Querying Google Gemini 1.5 Flash with full user history & complex negative constraint context...');
     llmResults = await callGeminiAPI(promptText, userProfile, candidates, geminiKey, userHistory);
   } else if (provider === 'groq' && groqKey && groqKey.trim()) {
-    console.log('[LLM Engine] Querying Groq Cloud (Llama 3.1 8B) with full user history & ratings context...');
+    console.log('[LLM Engine] Querying Groq Cloud (Llama 3.1 8B) with full user history & complex negative constraint context...');
     llmResults = await callGroqAPI(promptText, userProfile, candidates, groqKey, userHistory);
   } else {
     return null;

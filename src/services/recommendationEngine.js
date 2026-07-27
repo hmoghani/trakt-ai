@@ -144,7 +144,9 @@ const REFERENCE_MEDIA = [
 function generateStructuredReasoning(item, userProfile, filters, referenceMatch, matchScore) {
   const points = [];
 
-  if (filters.isWatchedQuery || item.isWatched) {
+  if (filters.preferEuropean || item.isEuropean) {
+    points.push(`🇪🇺 European Cinema: Intelligent non-US film (${item.title})`);
+  } else if (filters.isWatchedQuery || item.isWatched) {
     points.push(`👁️ From Your Watched History (User Rating: ${item.userRating ? item.userRating + '/10' : 'Watched'})`);
   } else if (filters.langCode) {
     const langNames = { fa: 'Persian/Farsi', fr: 'French', es: 'Spanish', ja: 'Japanese', ko: 'Korean', it: 'Italian', de: 'German' };
@@ -203,6 +205,10 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     excludeAnimation = false,
     requireStreaming = false,
     isWatchedQuery = false,
+    excludeUS = false,
+    excludeAsian = false,
+    preferEuropean = false,
+    preferIndieGems = false,
     personName = null,
     langCode = null,
     sortBy = 'matchScore',
@@ -227,11 +233,12 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   const targetGenre = (genre !== 'all') ? genre : (referenceMatch ? referenceMatch.genre : 'all');
   const shouldExcludeAnimation = excludeAnimation || (referenceMatch && referenceMatch.isLiveActionAdult);
 
+  const europeanLangs = ['es', 'fr', 'de', 'sv', 'no', 'it', 'pt', 'nl', 'da', 'fi', 'pl'];
+
   // 1. Strict Candidate Filter
   const filtered = candidatesList.filter(item => {
     const isItemWatched = watchedIds.has(item.id) || item.isWatched;
 
-    // If user specifically asked for "movies that I watched", ONLY include watched titles!
     if (isWatchedQuery) {
       if (!isItemWatched) return false;
     } else if (excludeWatched && isItemWatched) {
@@ -240,6 +247,24 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 
     if (mediaType !== 'all' && item.type !== mediaType) {
       return false;
+    }
+
+    // Negative constraints: No US / No American
+    if (excludeUS) {
+      const isUS = item.country === 'US' || (!item.language && !item.country && !item.isEuropean);
+      if (isUS && item.language === 'en') return false;
+    }
+
+    // Negative constraints: No Asian
+    if (excludeAsian) {
+      const isAsian = item.language === 'ja' || item.language === 'ko' || item.language === 'zh' || item.country === 'JP' || item.country === 'KR' || item.country === 'CN';
+      if (isAsian) return false;
+    }
+
+    // European Preference Filter
+    if (preferEuropean) {
+      const isEuro = item.isEuropean || europeanLangs.includes(item.language) || (item.country && item.country !== 'US' && item.country !== 'JP' && item.country !== 'KR');
+      if (!isEuro) return false;
     }
 
     // Streaming Availability Filter
@@ -285,7 +310,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       }
     }
 
-    // Strict Genre Exclusion: Candidate MUST contain target genre
+    // Strict Genre Exclusion
     if (targetGenre !== 'all') {
       const targetNorm = normalizeGenre(targetGenre);
       const itemGenresNorm = (item.genres || []).map(g => normalizeGenre(g));
@@ -313,6 +338,14 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
   // 2. Multi-Vector Scoring
   const scored = filtered.map(item => {
     let score = 0;
+
+    if (preferEuropean && (item.isEuropean || europeanLangs.includes(item.language))) {
+      score += 45;
+    }
+
+    if (preferIndieGems && (item.isIndieGem || (item.votes && item.votes < 50000))) {
+      score += 35;
+    }
 
     if (isWatchedQuery || item.isWatched) {
       score += 50;
@@ -349,7 +382,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       max: yearMode === 'range' ? maxYear : null
     };
 
-    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, isWatchedQuery, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
+    const reasoning = generateStructuredReasoning(item, userProfile, { genre: targetGenre, personName, langCode, preferEuropean, isWatchedQuery, yearRange: yearRangeObj }, referenceMatch, matchPercentage);
 
     return {
       ...item,
@@ -370,7 +403,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Audience, Actor/Person, Language, Watched Query, Streaming & Animation Exclusion Detection
+ * Natural language agent parser with Complex Negative Constraints, European Cinema & Hidden Gem Detection
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -384,12 +417,30 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     excludeAnimation: false,
     requireStreaming: false,
     isWatchedQuery: false,
+    excludeUS: false,
+    excludeAsian: false,
+    preferEuropean: false,
+    preferIndieGems: false,
     personName: null,
     langCode: null,
     referenceTitleKey: null
   };
 
-  // 0. Watched Query Intent Detection
+  // Negative & Regional Constraints
+  if (text.includes('no us') || text.includes('no american') || text.includes('non us') || text.includes('non-us')) {
+    result.excludeUS = true;
+  }
+  if (text.includes('no asian') || text.includes('non asian') || text.includes('non-asian')) {
+    result.excludeAsian = true;
+  }
+  if (text.includes('european') || text.includes('europe')) {
+    result.preferEuropean = true;
+  }
+  if (text.includes('gems') || text.includes('gem') || text.includes('indie') || text.includes('obscure') || text.includes('not the big blockbusters') || text.includes('not blockbusters')) {
+    result.preferIndieGems = true;
+  }
+
+  // Watched Query Intent
   const watchedQueryKeywords = [
     'movies that i watched', 'movies i watched', 'movies i have watched', "movies i've watched",
     'movies i seen', "movies i've seen", 'what have i watched', 'my watched movies',
@@ -398,16 +449,16 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   ];
   if (watchedQueryKeywords.some(kw => text.includes(kw))) {
     result.isWatchedQuery = true;
-    result.excludeWatched = false; // Do not exclude watched items!
+    result.excludeWatched = false;
   }
 
-  // 1. Streaming Availability Intent
+  // Streaming Availability Intent
   const streamingKeywords = ['streaming', 'stream', 'available for streaming', 'watch online', 'available to watch', 'on streaming', 'on netflix', 'on hbo', 'on prime', 'at home'];
   if (streamingKeywords.some(kw => text.includes(kw))) {
     result.requireStreaming = true;
   }
 
-  // 2. Language Intent Detection
+  // Language Intent Detection
   const langMappings = [
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
     { keys: ['french', 'france'], code: 'fr' },
@@ -425,20 +476,20 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 3. Media type intent
+  // Media type intent
   if (text.includes('movie') || text.includes('film')) {
     result.mediaType = 'movie';
   } else if (text.includes('tv') || text.includes('show') || text.includes('series')) {
     result.mediaType = 'show';
   }
 
-  // 4. Audience / Adult Intent & Animation Exclusion
+  // Audience / Adult Intent & Animation Exclusion
   const adultKeywords = ['adult', 'adults', 'mature', 'r-rated', 'r rated', 'live action', 'live-action', 'no animation', 'not animated', 'no cartoons', 'non animated'];
   if (adultKeywords.some(kw => text.includes(kw))) {
     result.excludeAnimation = true;
   }
 
-  // 5. Actor / Person Intent Detection
+  // Actor / Person Intent Detection
   const knownPeople = [
     { keys: ['brad pit', 'brad pitt'], name: 'Brad Pitt' },
     { keys: ['leonardo dicaprio', 'dicaprio'], name: 'Leonardo DiCaprio' },
@@ -461,7 +512,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 6. Decade / Era intent
+  // Decade / Era intent
   if (text.includes('90s') || text.includes('1990s') || text.includes('nineties')) {
     result.yearMode = 'decade';
     result.decade = '1990';
@@ -479,14 +530,14 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.decade = '2000';
   }
 
-  // 7. Exact year regex
+  // Exact year regex
   const yearMatch = text.match(/\b(19\d\d|20\d\d)\b/);
   if (yearMatch && !result.decade) {
     result.yearMode = 'exact';
     result.exactYear = yearMatch[1];
   }
 
-  // 8. Reference Movie/Show Detection
+  // Reference Movie/Show Detection
   for (const ref of REFERENCE_MEDIA) {
     if (ref.keywords.some(kw => text.includes(kw))) {
       result.referenceTitleKey = ref.keywords[0];
@@ -498,7 +549,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // 9. Genre Keywords if no reference match
+  // Genre Keywords if no reference match
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];
