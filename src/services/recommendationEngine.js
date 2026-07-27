@@ -155,7 +155,7 @@ function generateStructuredReasoning(item, userProfile, filters, referenceMatch,
     const langName = langNames[filters.langCode] || filters.langCode.toUpperCase();
     points.push(`🌐 Foreign Cinema: Authentic ${langName} title (${item.title})`);
   } else if (filters.personName) {
-    points.push(`🎭 Actor Match: Stars ${filters.personName}`);
+    points.push(`🎭 Actor/Director Match: Features ${filters.personName}`);
   } else if (referenceMatch) {
     const themeOverlap = (item.themes || []).filter(t => (referenceMatch.themes || []).includes(t));
     if (themeOverlap.length > 0) {
@@ -206,6 +206,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     excludeWatched = true,
     excludeAnimation = false,
     requireStreaming = false,
+    requireHighRating = false,
     isWatchedQuery = false,
     excludeUS = false,
     excludeAsian = false,
@@ -249,6 +250,11 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
     }
 
     if (mediaType !== 'all' && item.type !== mediaType) {
+      return false;
+    }
+
+    // High rating threshold filter
+    if (requireHighRating && item.traktRating && item.traktRating < 7.8) {
       return false;
     }
 
@@ -318,7 +324,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       }
     }
 
-    // Person / Actor Name Filter if present
+    // Person / Actor / Actress Name Filter if present
     if (personName) {
       const normPerson = personName.toLowerCase();
       const castMatch = (item.cast || []).some(c => c.toLowerCase().includes(normPerson));
@@ -421,7 +427,7 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
 }
 
 /**
- * Natural language agent parser with Complex Negative Constraints, European Cinema & Blockbuster Exclusion Detection
+ * Natural language agent parser with Exhaustive Intent Coverage Across All 12 Dimensions
  */
 export function parseAgentPrompt(promptText = '', genresList = []) {
   const text = promptText.toLowerCase().trim();
@@ -434,6 +440,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     excludeWatched: true,
     excludeAnimation: false,
     requireStreaming: false,
+    requireHighRating: false,
     isWatchedQuery: false,
     excludeUS: false,
     excludeAsian: false,
@@ -445,14 +452,19 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     referenceTitleKey: null
   };
 
-  // Negative & Blockbuster Exclusion Detection
-  if (text.includes('no us') || text.includes('no american') || text.includes('non us') || text.includes('non-us')) {
+  // 1. High Rating & Acclaim Intent Detection
+  if (text.includes('highly rated') || text.includes('top rated') || text.includes('acclaimed') || text.includes('masterpiece') || text.includes('oscar') || text.includes('best movies')) {
+    result.requireHighRating = true;
+  }
+
+  // 2. Negative & Blockbuster Exclusion Detection
+  if (text.includes('no us') || text.includes('no american') || text.includes('non us') || text.includes('non-us') || text.includes('outside us')) {
     result.excludeUS = true;
   }
   if (text.includes('no asian') || text.includes('non asian') || text.includes('non-asian')) {
     result.excludeAsian = true;
   }
-  if (text.includes('european') || text.includes('europe')) {
+  if (text.includes('european') || text.includes('europe') || text.includes('euro')) {
     result.preferEuropean = true;
   }
   if (
@@ -466,11 +478,11 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
   ) {
     result.excludeBlockbusters = true;
     result.preferIndieGems = true;
-  } else if (text.includes('gems') || text.includes('gem') || text.includes('obscure')) {
+  } else if (text.includes('gems') || text.includes('gem') || text.includes('obscure') || text.includes('cult classic')) {
     result.preferIndieGems = true;
   }
 
-  // Watched Query Intent
+  // 3. Watched Query Intent
   const watchedQueryKeywords = [
     'movies that i watched', 'movies i watched', 'movies i have watched', "movies i've watched",
     'movies i seen', "movies i've seen", 'what have i watched', 'my watched movies',
@@ -482,13 +494,13 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.excludeWatched = false;
   }
 
-  // Streaming Availability Intent
+  // 4. Streaming Availability Intent
   const streamingKeywords = ['streaming', 'stream', 'available for streaming', 'watch online', 'available to watch', 'on streaming', 'on netflix', 'on hbo', 'on prime', 'at home'];
   if (streamingKeywords.some(kw => text.includes(kw))) {
     result.requireStreaming = true;
   }
 
-  // Language Intent Detection
+  // 5. Language Intent Detection
   const langMappings = [
     { keys: ['farsi', 'persian', 'iranian', 'iran', 'farzi', 'parsi'], code: 'fa' },
     { keys: ['french', 'france'], code: 'fr' },
@@ -506,20 +518,20 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // Media type intent
-  if (text.includes('movie') || text.includes('film')) {
+  // 6. Media type intent
+  if (text.includes('movie') || text.includes('film') || text.includes('cinema')) {
     result.mediaType = 'movie';
-  } else if (text.includes('tv') || text.includes('show') || text.includes('series')) {
+  } else if (text.includes('tv') || text.includes('show') || text.includes('series') || text.includes('television')) {
     result.mediaType = 'show';
   }
 
-  // Audience / Adult Intent & Animation Exclusion
+  // 7. Audience / Adult Intent & Animation Exclusion
   const adultKeywords = ['adult', 'adults', 'mature', 'r-rated', 'r rated', 'live action', 'live-action', 'no animation', 'not animated', 'no cartoons', 'non animated'];
   if (adultKeywords.some(kw => text.includes(kw))) {
     result.excludeAnimation = true;
   }
 
-  // Actor / Person Intent Detection
+  // 8. Actor & Actress & Director Intent Detection (Expanded Master List)
   const knownPeople = [
     { keys: ['brad pit', 'brad pitt'], name: 'Brad Pitt' },
     { keys: ['leonardo dicaprio', 'dicaprio'], name: 'Leonardo DiCaprio' },
@@ -529,10 +541,18 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     { keys: ['denzel washington'], name: 'Denzel Washington' },
     { keys: ['christian bale'], name: 'Christian Bale' },
     { keys: ['cillian murphy'], name: 'Cillian Murphy' },
+    { keys: ['margot robbie'], name: 'Margot Robbie' },
+    { keys: ['scarlett johansson'], name: 'Scarlett Johansson' },
+    { keys: ['penelope cruz', 'penélope cruz'], name: 'Penélope Cruz' },
+    { keys: ['taraneh alidoosti'], name: 'Taraneh Alidoosti' },
+    { keys: ['alicia vikander'], name: 'Alicia Vikander' },
     { keys: ['quentin tarantino'], name: 'Quentin Tarantino' },
     { keys: ['christopher nolan'], name: 'Christopher Nolan' },
     { keys: ['asghar farhadi'], name: 'Asghar Farhadi' },
-    { keys: ['abbas kiarostami'], name: 'Abbas Kiarostami' }
+    { keys: ['abbas kiarostami'], name: 'Abbas Kiarostami' },
+    { keys: ['denis villeneuve'], name: 'Denis Villeneuve' },
+    { keys: ['david fincher'], name: 'David Fincher' },
+    { keys: ['ridley scott'], name: 'Ridley Scott' }
   ];
 
   for (const p of knownPeople) {
@@ -542,13 +562,16 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // Decade / Era intent
+  // 9. Decade / Era intent
   if (text.includes('90s') || text.includes('1990s') || text.includes('nineties')) {
     result.yearMode = 'decade';
     result.decade = '1990';
   } else if (text.includes('80s') || text.includes('1980s') || text.includes('eighties')) {
     result.yearMode = 'decade';
     result.decade = '1980';
+  } else if (text.includes('70s') || text.includes('1970s') || text.includes('seventies')) {
+    result.yearMode = 'decade';
+    result.decade = '1970';
   } else if (text.includes('2020s') || text.includes('recent') || text.includes('latest')) {
     result.yearMode = 'decade';
     result.decade = '2020';
@@ -560,14 +583,14 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     result.decade = '2000';
   }
 
-  // Exact year regex
+  // 10. Exact year regex
   const yearMatch = text.match(/\b(19\d\d|20\d\d)\b/);
   if (yearMatch && !result.decade) {
     result.yearMode = 'exact';
     result.exactYear = yearMatch[1];
   }
 
-  // Reference Movie/Show Detection
+  // 11. Reference Movie/Show Detection
   for (const ref of REFERENCE_MEDIA) {
     if (ref.keywords.some(kw => text.includes(kw))) {
       result.referenceTitleKey = ref.keywords[0];
@@ -579,7 +602,7 @@ export function parseAgentPrompt(promptText = '', genresList = []) {
     }
   }
 
-  // Genre Keywords if no reference match
+  // 12. Genre Keywords if no reference match
   if (result.genre === 'all') {
     const scifiKeywords = ['scifi', 'sci-fi', 'sci fi', 'science fiction', 'alien', 'space', 'cyberpunk', 'robot', 'future', 'dystopian'];
     const horrorKeywords = ['horror', 'scary', 'spooky', 'slasher', 'monster', 'ghost', 'haunted', 'zombie'];
