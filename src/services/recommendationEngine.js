@@ -246,9 +246,11 @@ export function generateRecommendations(catalogCandidates = [], userProfile, fil
       const isBlockbusterTitle = 
         item.isBlockbuster || 
         (item.votes && item.votes > 65000) || 
-        (item.traktRating && item.traktRating >= 8.0);
+        (item.traktRating && item.traktRating >= 8.0 && item.votes > 30000);
 
-      if (!isBlockbusterTitle) return false;
+      const isAnimationGenre = (item.genres || []).some(g => normalizeGenre(g) === 'animation' || normalizeGenre(g) === 'anime');
+
+      if (!isBlockbusterTitle || item.type !== 'movie' || isAnimationGenre) return false;
     } else if (excludeBlockbusters || preferIndieGems) {
       const titleLower = item.title?.toLowerCase() || '';
       const isStudioBlockbuster = 
