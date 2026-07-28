@@ -283,13 +283,13 @@ export default function App() {
     return set;
   }, [watchedMovies, watchedShows]);
 
-  // Compute Recommendations
+  // Compute Recommendations (Purely from LLM)
   const recommendations = useMemo(() => {
-    if (llmResults && Array.isArray(llmResults) && llmResults.length > 0) {
+    if (llmResults && Array.isArray(llmResults)) {
       return llmResults;
     }
-    return generateRecommendations(catalogCandidates, userProfile, filters, watchedIdsSet);
-  }, [llmResults, catalogCandidates, userProfile, filters, watchedIdsSet]);
+    return [];
+  }, [llmResults]);
 
   // Agent Natural Prompt Query Handler
   const handleAgentQuery = async (parsedFilters, promptText) => {
@@ -354,12 +354,11 @@ export default function App() {
     });
     let currentCandidates = Array.from(map.values());
 
-    // If no LLM key configured, show explicit setup alert and local clean recommendations
+    // If no LLM key configured, return 0 results and prompt user for API key
     if (!hasApiKey) {
-      const localFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
-      setLlmResults(localFiltered);
+      setLlmResults([]);
       setFilters(activeFilters);
-      setErrorMsg('💡 AI API Key Notice: Add a free Google Gemini or Groq API Key in Settings for AI reasoning.');
+      setErrorMsg('🔑 AI API Key Required: Please add a Google Gemini or Groq API Key in Settings for AI recommendations.');
       setIsLoading(false);
       return;
     }
@@ -367,33 +366,26 @@ export default function App() {
     // Query LLM (Google Gemini or Groq)
     try {
       const userHistoryPayload = { watchedMovies, watchedShows, likedItems };
-
-      const preFilteredCandidates = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
-      const candidatePoolForLLM = (preFilteredCandidates && preFilteredCandidates.length >= 2) ? preFilteredCandidates : currentCandidates;
-
-      const aiRes = await generateLLMRecommendations(promptText, userProfile, candidatePoolForLLM, llmConfig, userHistoryPayload);
+      const aiRes = await generateLLMRecommendations(promptText, userProfile, currentCandidates, llmConfig, userHistoryPayload);
 
       if (aiRes && aiRes.length > 0) {
-        const postFiltered = generateRecommendations(aiRes, userProfile, activeFilters, watchedIdsSet);
-        setLlmResults(postFiltered.length > 0 ? postFiltered : aiRes);
+        setLlmResults(aiRes);
       } else {
         setLlmResults([]);
       }
       setFilters(activeFilters);
     } catch (err) {
       console.warn('[LLM Query Error]:', err.message);
-      // Fallback to local recommendation engine so user NEVER gets blank screen on API rate limits
-      const fallbackLocalFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
-      setLlmResults(fallbackLocalFiltered);
+      setLlmResults([]);
       setFilters(activeFilters);
 
       const errLower = err.message.toLowerCase();
       if (errLower.includes('400') || errLower.includes('invalid') || errLower.includes('key') || errLower.includes('invalid_argument')) {
         setErrorMsg('🔑 Invalid LLM API Key: Please update your Gemini or Groq API key in Settings.');
       } else if (errLower.includes('429') || errLower.includes('quota') || errLower.includes('resource_exhausted') || errLower.includes('rate limit') || errLower.includes('rate_limit')) {
-        setErrorMsg('⏳ Gemini Free Tier Limit Reached (15 Req/Min): Showing instant local recommendations. Wait 15-30s or switch to Groq in Settings.');
+        setErrorMsg('⚠️ LLM Rate Limit Exceeded (HTTP 429): Google Gemini / Groq quota reached. Please wait 30 seconds or switch providers in Settings.');
       } else {
-        setErrorMsg(`⚠️ LLM Notice: ${err.message}`);
+        setErrorMsg(`⚠️ LLM Response Error: ${err.message}`);
       }
     } finally {
       setIsLoading(false);
