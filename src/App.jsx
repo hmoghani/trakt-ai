@@ -252,8 +252,19 @@ export default function App() {
       }
 
     } catch (err) {
-      console.error('[Trakt AI] Live API sync failed:', err);
-      setErrorMsg(`Trakt API Notice: ${err.message}`);
+      console.warn('LLM Intent Interpretation notice:', err.message);
+      // On any LLM Intent error (including rate limits), clear results and stop further processing
+      setLlmResults([]);
+      const errLower = err.message.toLowerCase();
+      if (errLower.includes('400') || errLower.includes('invalid') || errLower.includes('key') || errLower.includes('invalid_argument')) {
+        setErrorMsg('🔑 Invalid LLM API Key: Please update your Gemini API key in Settings.');
+      } else if (errLower.includes('429') || errLower.includes('quota') || errLower.includes('resource_exhausted') || errLower.includes('rate limit') || errLower.includes('rate_limit')) {
+        setErrorMsg('⚠️ LLM Rate Limit Exceeded (HTTP 429): Gemini quota reached. Please wait or switch provider.');
+      } else {
+        setErrorMsg(`⚠️ LLM Intent Error: ${err.message}`);
+      }
+      setIsLoading(false);
+      return; // abort further steps
     } finally {
       setIsLoading(false);
     }
@@ -375,10 +386,10 @@ export default function App() {
       setFilters(activeFilters);
 
       const errLower = err.message.toLowerCase();
-      if (errLower.includes('429') || errLower.includes('quota') || errLower.includes('rate')) {
-        setErrorMsg('⚠️ LLM Rate Limit Exceeded (HTTP 429): Google Gemini / Groq quota reached. Please wait 30 seconds or switch providers in Settings.');
-      } else if (errLower.includes('400') || errLower.includes('invalid') || errLower.includes('key')) {
+      if (errLower.includes('400') || errLower.includes('invalid') || errLower.includes('key') || errLower.includes('invalid_argument')) {
         setErrorMsg('🔑 Invalid LLM API Key: Please update your Gemini or Groq API key in Settings.');
+      } else if (errLower.includes('429') || errLower.includes('quota') || errLower.includes('resource_exhausted') || errLower.includes('rate limit') || errLower.includes('rate_limit')) {
+        setErrorMsg('⚠️ LLM Rate Limit Exceeded (HTTP 429): Google Gemini / Groq quota reached. Please wait 30 seconds or switch providers in Settings.');
       } else {
         setErrorMsg(`⚠️ LLM Response Error: ${err.message}`);
       }
