@@ -1,4 +1,41 @@
-// LLM Service for Google Gemini 1.5 Flash & Groq (Llama 3.1 8B)
+const GEMINI_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-flash',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-lite'
+];
+
+async function fetchGeminiWithFallback(apiKey, bodyObj) {
+  let lastErr = null;
+  for (const modelName of GEMINI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey.trim()}`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj)
+      });
+      if (response.status === 404) {
+        console.warn(`[Gemini API] Model ${modelName} returned 404, attempting fallback model...`);
+        lastErr = new Error(`Gemini API Error (404): Model ${modelName} not found`);
+        continue;
+      }
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Gemini API Error (${response.status}): ${errText.substring(0, 150)}`);
+      }
+      return await response.json();
+    } catch (err) {
+      if (err.message && err.message.includes('404')) {
+        lastErr = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr || new Error('Gemini API Error (404): No compatible Gemini model endpoint found.');
+}
 
 /**
  * Uses LLM (Gemini or Groq) as an intelligent Intent Interpreter to extract ISO language codes, 
@@ -26,17 +63,10 @@ Extract the user's intent into a JSON object with these exact keys:
 
   try {
     if (provider === 'gemini') {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-        })
+      const data = await fetchGeminiWithFallback(apiKey, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
       });
-      if (!response.ok) return null;
-      const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       return JSON.parse(rawText);
     } else if (provider === 'groq') {
@@ -88,11 +118,9 @@ export function buildUserHistoryContext(userHistory = {}) {
 }
 
 /**
- * Call Google Gemini 1.5 Flash API (100% Free - 1M Token Context Window)
+ * Call Google Gemini API with model fallback (gemini-2.0-flash -> gemini-1.5-flash-latest -> gemini-1.5-flash)
  */
 export async function callGeminiAPI(promptText, userProfile, candidates, apiKey, userHistory = {}) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}`;
-
   const historyContext = buildUserHistoryContext(userHistory);
 
   const compactCandidates = candidates.slice(0, 80).map(c => ({
@@ -142,27 +170,15 @@ Return ONLY a valid JSON array of objects with these exact keys:
   }
 ]`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: systemInstruction }]
-      }],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1200,
-        responseMimeType: "application/json"
-      }
-    })
+  const data = await fetchGeminiWithFallback(apiKey, {
+    contents: [{ parts: [{ text: systemInstruction }] }],
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 1200,
+      responseMimeType: "application/json"
+    }
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini API Error (${response.status}): ${errText.substring(0, 150)}`);
-  }
-
-  const data = await response.json();
   const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
   
   try {
