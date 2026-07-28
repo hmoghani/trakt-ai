@@ -271,8 +271,17 @@ export async function generateLLMRecommendations(promptText, userProfile, candid
   let llmResults = [];
 
   if (provider === 'gemini' && geminiKey && geminiKey.trim()) {
-    console.log('[LLM Engine] Querying Google Gemini 1.5 Flash with full user history & regional context...');
-    llmResults = await callGeminiAPI(promptText, userProfile, candidates, geminiKey, userHistory);
+    try {
+      console.log('[LLM Engine] Querying Google Gemini with full user history & regional context...');
+      llmResults = await callGeminiAPI(promptText, userProfile, candidates, geminiKey, userHistory);
+    } catch (err) {
+      if (groqKey && groqKey.trim()) {
+        console.warn('[LLM Engine] Gemini API limit hit, failing over to Groq Cloud (Llama 3.1 8B)...');
+        llmResults = await callGroqAPI(promptText, userProfile, candidates, groqKey, userHistory);
+      } else {
+        throw err;
+      }
+    }
   } else if (provider === 'groq' && groqKey && groqKey.trim()) {
     console.log('[LLM Engine] Querying Groq Cloud (Llama 3.1 8B) with full user history & regional context...');
     llmResults = await callGroqAPI(promptText, userProfile, candidates, groqKey, userHistory);

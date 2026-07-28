@@ -382,16 +382,18 @@ export default function App() {
       setFilters(activeFilters);
     } catch (err) {
       console.warn('[LLM Query Error]:', err.message);
-      setLlmResults([]);
+      // Fallback to local recommendation engine so user NEVER gets blank screen on API rate limits
+      const fallbackLocalFiltered = generateRecommendations(currentCandidates, userProfile, activeFilters, watchedIdsSet);
+      setLlmResults(fallbackLocalFiltered);
       setFilters(activeFilters);
 
       const errLower = err.message.toLowerCase();
       if (errLower.includes('400') || errLower.includes('invalid') || errLower.includes('key') || errLower.includes('invalid_argument')) {
         setErrorMsg('🔑 Invalid LLM API Key: Please update your Gemini or Groq API key in Settings.');
       } else if (errLower.includes('429') || errLower.includes('quota') || errLower.includes('resource_exhausted') || errLower.includes('rate limit') || errLower.includes('rate_limit')) {
-        setErrorMsg('⚠️ LLM Rate Limit Exceeded (HTTP 429): Google Gemini / Groq quota reached. Please wait 30 seconds or switch providers in Settings.');
+        setErrorMsg('⏳ Gemini Free Tier Limit Reached (15 Req/Min): Showing instant local recommendations. Wait 15-30s or switch to Groq in Settings.');
       } else {
-        setErrorMsg(`⚠️ LLM Response Error: ${err.message}`);
+        setErrorMsg(`⚠️ LLM Notice: ${err.message}`);
       }
     } finally {
       setIsLoading(false);
